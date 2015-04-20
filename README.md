@@ -1,1 +1,1 @@
-# rally_auto 
+# Rally Test Automation 

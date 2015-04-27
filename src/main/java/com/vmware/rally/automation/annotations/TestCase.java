@@ -9,4 +9,6 @@ import java.lang.annotation.Target;
 @Target({ ElementType.METHOD })
 public @interface TestCase {
 	String id();
+	String buildNumber();
+	String testSetId() default "";
 }

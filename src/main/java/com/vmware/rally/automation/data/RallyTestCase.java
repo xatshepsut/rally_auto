@@ -6,7 +6,6 @@ public class RallyTestCase {
 	private String _buildNumber = "";
 	private String _testSetId = "";
 	
-	
 	public String getFormattedId() {
 		return _formattedId;
 	}

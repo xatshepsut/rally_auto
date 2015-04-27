@@ -43,18 +43,7 @@ public class RallyInvokedMethodListener implements IInvokedMethodListener    {
 				rtc.setFormattedId(tcAnnotation.id());
 				rtc.setBuildNumber(tcAnnotation.buildNumber());
 				rtc.setTestSetId(tcAnnotation.testSetId());
-				
-				// Getting test folder annotation
-				TestFolder tfAnnotation = method.getAnnotation(TestFolder.class);
-				if (tfAnnotation != null) {
-					rtc.moveToTestFolderWithId(tfAnnotation.id());
-				} else {
-					NewTestFolder ntfAnnotation = method.getAnnotation(NewTestFolder.class);
-					if (ntfAnnotation != null) {
-						rtc.moveToNewTestFolderWithName(ntfAnnotation.name());
-					}
-				}
-					
+	
 				_testCaseMap.put(TestUtils.getMethodFullName(invokedMethod.getTestMethod()), rtc);
 				
 			} else {

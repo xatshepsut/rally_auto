@@ -4,7 +4,6 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import com.vmware.rally.automation.annotations.TestCase;
-import com.vmware.rally.automation.utils.TestUtils;
 
 
 public class SampleTest {
@@ -20,7 +19,7 @@ public class SampleTest {
 	@TestCase(id = "TC2", buildNumber = "2234")
 	public void test2() {
 		boolean value = true;
-		Assert.assertEquals(value, !value);
+		Assert.assertEquals(value, value);
 	}
 	
 }

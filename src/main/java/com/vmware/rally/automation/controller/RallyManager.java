@@ -58,7 +58,7 @@ public class RallyManager {
 	
 	
 	/* Public Methods */
-	
+
 	public JsonObject getUserWithEmail(String email) throws IOException {
 		QueryRequest userRequest = new QueryRequest(TYPE_USER);
 		userRequest.setQueryFilter(new QueryFilter("EmailAddress", "=", email));
@@ -123,6 +123,9 @@ public class RallyManager {
 		testCaseResultJson.addProperty("Verdict", verdict);
 		
 		testCaseResultJson.add("TestCase", testCase);
+		
+		// TODO: add test set
+		//testCaseResultJson.add("TestSet", testCase);
 		
 		// TODO: user should provide Date object
 		testCaseResultJson.addProperty("Date", getCurrentDate());

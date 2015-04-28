@@ -37,7 +37,7 @@ public class RallyTestListener implements ITestListener {
 		String methodName = TestUtils.getMethodFullName(result.getMethod());
 		
 		System.out.println("Test succeded: "  + methodName);
-	    System.out.println("Test case id: " + RallyInvokedMethodListener.getTestCaseForMethod(methodName).getFormattedId());
+	    System.out.println("Test case id: " + RallyInvokedMethodListener.getTestCaseForMethod(methodName).getId());
 	    System.out.println();
 	}
 
@@ -48,7 +48,7 @@ public class RallyTestListener implements ITestListener {
 		String methodName = TestUtils.getMethodFullName(result.getMethod());
 		
 		System.out.println("Test failed: "  + methodName);
-		System.out.println("Test case id: " + RallyInvokedMethodListener.getTestCaseForMethod(methodName).getFormattedId());
+		System.out.println("Test case id: " + RallyInvokedMethodListener.getTestCaseForMethod(methodName).getId());
 		System.out.println();
 	}
 	

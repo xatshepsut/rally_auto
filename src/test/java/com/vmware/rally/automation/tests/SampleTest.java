@@ -9,7 +9,7 @@ import com.vmware.rally.automation.annotations.TestCase;
 public class SampleTest {
 
 	@Test()
-	@TestCase(id = "TC1", buildNumber = "2234")
+	@TestCase(id = "TC1", buildNumber = "2234", testSetId = "TS1")
 	public void test1() {
 		boolean value = true;
 		Assert.assertEquals(value, value);

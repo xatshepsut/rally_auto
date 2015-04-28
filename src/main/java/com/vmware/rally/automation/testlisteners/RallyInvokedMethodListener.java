@@ -39,11 +39,7 @@ public class RallyInvokedMethodListener implements IInvokedMethodListener    {
 			TestCase tcAnnotation = method.getAnnotation(TestCase.class);
 			if (tcAnnotation != null) {
 				
-				RallyTestCase rtc = new RallyTestCase();
-				rtc.setFormattedId(tcAnnotation.id());
-				rtc.setBuildNumber(tcAnnotation.buildNumber());
-				rtc.setTestSetId(tcAnnotation.testSetId());
-	
+				RallyTestCase rtc = new RallyTestCase(tcAnnotation.id(), tcAnnotation.buildNumber(), tcAnnotation.testSetId());
 				_testCaseMap.put(TestUtils.getMethodFullName(invokedMethod.getTestMethod()), rtc);
 				
 			} else {

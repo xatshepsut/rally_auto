@@ -1,16 +1,49 @@
 package com.vmware.rally.automation.data;
 
+import com.google.gson.JsonObject;
+
+/**
+ * Data container for keeping info retrieved from annotations
+ * and test case Json object in it's different states
+ * 
+ * @author akaramyan
+ */
 public class RallyTestCase {
 	
-	private String _formattedId = "";
+	private String _id = "";
 	private String _buildNumber = "";
 	private String _testSetId = "";
 	
-	public String getFormattedId() {
-		return _formattedId;
+	private JsonObject _testCaseJson = null;
+	
+	
+	/* Constructors */
+	
+	public RallyTestCase(String id) {
+		setId(id);
 	}
-	public void setFormattedId(String formattedId) {
-		_formattedId = formattedId;
+	
+	public RallyTestCase(String id, String buildNumber) {
+		this(id);
+		setBuildNumber(buildNumber);
+	}
+	
+	public RallyTestCase(String id, String buildNumber, String testSetId) {
+		this(id, buildNumber);
+		setTestSetId(testSetId);
+	}
+	
+	/* Public methods */
+	
+	
+	
+	/* Getters and Setters */
+	
+	public String getId() {
+		return _id;
+	}
+	public void setId(String id) {
+		_id = id;
 	}
 	
 	public String getBuildNumber() {
@@ -28,5 +61,12 @@ public class RallyTestCase {
 	}
 	public boolean hasTestSet() {
 		return !_testSetId.isEmpty();
+	}
+	
+	public JsonObject getTestCaseJson() {
+		return _testCaseJson;
+	}
+	public void setestCaseJson(JsonObject testCaseJson) {
+		_testCaseJson = testCaseJson;
 	}
 }

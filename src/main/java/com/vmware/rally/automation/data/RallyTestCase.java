@@ -15,6 +15,7 @@ public class RallyTestCase {
 	private String _testSetId = "";
 	
 	private JsonObject _testCaseJson = null;
+	private JsonObject _testSetJson = null;
 	
 	
 	/* Constructors */
@@ -32,9 +33,6 @@ public class RallyTestCase {
 		this(id, buildNumber);
 		setTestSetId(testSetId);
 	}
-	
-	/* Public methods */
-	
 	
 	
 	/* Getters and Setters */
@@ -66,7 +64,14 @@ public class RallyTestCase {
 	public JsonObject getTestCaseJson() {
 		return _testCaseJson;
 	}
-	public void setestCaseJson(JsonObject testCaseJson) {
+	public void setTestCaseJson(JsonObject testCaseJson) {
 		_testCaseJson = testCaseJson;
+	}
+
+	public JsonObject getTestSetJson() {
+		return _testSetJson;
+	}
+	public void setTestSetJson(JsonObject testSetJson) {
+		_testSetJson = testSetJson;
 	}
 }

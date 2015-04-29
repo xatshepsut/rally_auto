@@ -22,6 +22,7 @@ import com.rallydev.rest.util.QueryFilter;
 
 // TODO: move all hardcoded stings
 // TODO: add status report logs
+// TODO: catch IOException and fire custom exception more meaningfull to user
 
 @SuppressWarnings("unused")
 public class RallyManager {
@@ -117,15 +118,13 @@ public class RallyManager {
 		return createdTestCaseJson;
 	}
 	
-	public JsonObject createTestCaseResult(JsonObject testCase, String build, String verdict) throws IOException {
+	public JsonObject createTestCaseResult(JsonObject testCase, JsonObject testSet, String build, String verdict) throws IOException {
 		JsonObject testCaseResultJson = new JsonObject();
 		testCaseResultJson.addProperty("Build", build);
 		testCaseResultJson.addProperty("Verdict", verdict);
 		
-		testCaseResultJson.add("TestCase", testCase);
-		
-		// TODO: add test set
-		//testCaseResultJson.add("TestSet", testCase);
+		testCaseResultJson.add("TestCase", testCase);		
+		testCaseResultJson.add("TestSet", testSet);
 		
 		// TODO: user should provide Date object
 		testCaseResultJson.addProperty("Date", getCurrentDate());

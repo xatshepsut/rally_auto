@@ -22,14 +22,14 @@ import com.rallydev.rest.util.QueryFilter;
 
 // TODO: move all hardcoded stings
 // TODO: add status report logs
-// TODO: catch IOException and fire custom exception more meaningfull to user
+// TODO: catch IOException and fire custom exception more meaningful to user
 
 @SuppressWarnings("unused")
 public class RallyManager {
 	
 	public static String RALLY_URL_1 = "https://rally1.rallydev.com";
-	public static String API_KEY = "_GrAuRENARyBkEqRRLo3XSMcPQUD5Um9vkUBCQjpb0";
-	public static String USER_EMAIL = "akaramyan@vmware.com";
+	public static String API_KEY = "_OhYE7czYRo2y2tR6il3lyJQsoJGhP0T1gM8JqCFZMlg";
+	public static String USER_EMAIL = "bobbrown@dispostable.com";
 	
 	public static final String TYPE_TESTCASERESULT = "testcaseresult";
 	public static final String TYPE_TESTCASE = "testcase";
@@ -41,7 +41,7 @@ public class RallyManager {
 	
 	private RallyManager() {
 		try {
-			// TODO: temporary user credentials are hard coded
+			// TODO: user credentials are hard coded, temporarily
 			_restApi = new RallyRestApi(new URI(RALLY_URL_1), API_KEY);
 			
 		} catch (URISyntaxException e) {
@@ -64,7 +64,7 @@ public class RallyManager {
 		QueryRequest userRequest = new QueryRequest(TYPE_USER);
 		userRequest.setQueryFilter(new QueryFilter("EmailAddress", "=", email));
 		
-		// TODO: Common for current filter queries
+		// TODO: Common for current filter queries, encapsulate
 		userRequest.setFetch(new Fetch(""));
 		userRequest.setLimit(1);
 		
@@ -78,7 +78,7 @@ public class RallyManager {
 		QueryRequest testCaseRequest = new QueryRequest(TYPE_TESTCASE);
 		testCaseRequest.setQueryFilter(new QueryFilter("FormattedID", "=", id));
 		
-		// TODO: Common for current filter queries
+		// TODO: Common for current filter queries, encapsulate
 		testCaseRequest.setFetch(new Fetch(""));
 		testCaseRequest.setLimit(1);
 		
@@ -92,7 +92,7 @@ public class RallyManager {
 		QueryRequest testCaseRequest = new QueryRequest(TYPE_TESTSET);
 		testCaseRequest.setQueryFilter(new QueryFilter("FormattedID", "=", id));
 		
-		// TODO: Common for current filter queries
+		// TODO: Common for current filter queries, encapsulate
 		testCaseRequest.setFetch(new Fetch(""));
 		testCaseRequest.setLimit(1);
 		
@@ -126,7 +126,7 @@ public class RallyManager {
 		testCaseResultJson.add("TestCase", testCase);		
 		testCaseResultJson.add("TestSet", testSet);
 		
-		// TODO: user should provide Date object
+		// TODO: user should provide Date object ?
 		testCaseResultJson.addProperty("Date", getCurrentDate());
 		
 		// TODO: user object should be given
@@ -172,9 +172,9 @@ public class RallyManager {
 	}
 	
 	/**
-	 * Helper method, deletes Rally object with given refrence
-	 * @param ref - Sring containing refrence, ex. "/testcase/7362928857"
-	 * @return <i>true</i> if deletetion was succesfull, <i>false</i> otherwise
+	 * Helper method, deletes Rally object with given reference
+	 * @param ref - String containing reference, ex. "/testcase/7362928857"
+	 * @return <i>true</i> if deletion was successful, <i>false</i> otherwise
 	 * @throws IOException
 	 */
 	private boolean deleteObjectWithRef(String ref) throws IOException {

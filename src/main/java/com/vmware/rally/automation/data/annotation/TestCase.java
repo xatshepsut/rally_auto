@@ -10,5 +10,5 @@ import java.lang.annotation.Target;
 public @interface TestCase {
 	String id();
 	String buildNumber();
-	String testSetId() default "";
+	String testSetId();
 }

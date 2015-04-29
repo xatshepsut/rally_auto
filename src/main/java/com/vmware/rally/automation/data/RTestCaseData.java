@@ -4,11 +4,11 @@ import com.google.gson.JsonObject;
 
 /**
  * Data container for keeping info retrieved from annotations
- * and test case Json object in it's different states
+ * and JSON objects related to test
  * 
  * @author akaramyan
  */
-public class RTestCase {
+public class RTestCaseData {
 	
 	private String _id = "";
 	private String _buildNumber = "";
@@ -20,16 +20,16 @@ public class RTestCase {
 	
 	/* Constructors */
 	
-	public RTestCase(String id) {
+	public RTestCaseData(String id) {
 		setId(id);
 	}
 	
-	public RTestCase(String id, String buildNumber) {
+	public RTestCaseData(String id, String buildNumber) {
 		this(id);
 		setBuildNumber(buildNumber);
 	}
 	
-	public RTestCase(String id, String buildNumber, String testSetId) {
+	public RTestCaseData(String id, String buildNumber, String testSetId) {
 		this(id, buildNumber);
 		setTestSetId(testSetId);
 	}
@@ -57,15 +57,15 @@ public class RTestCase {
 	public void setTestSetId(String testSetId) {
 		_testSetId = testSetId;
 	}
-	public boolean hasTestSet() {
-		return !_testSetId.isEmpty();
-	}
 	
 	public JsonObject getTestCaseJson() {
 		return _testCaseJson;
 	}
 	public void setTestCaseJson(JsonObject testCaseJson) {
 		_testCaseJson = testCaseJson;
+	}
+	public boolean hasTestCase() {
+		return _testCaseJson != null;
 	}
 
 	public JsonObject getTestSetJson() {
@@ -74,4 +74,8 @@ public class RTestCase {
 	public void setTestSetJson(JsonObject testSetJson) {
 		_testSetJson = testSetJson;
 	}
+	public boolean hasTestSet() {
+		return _testSetJson != null;
+	}
+	
 }

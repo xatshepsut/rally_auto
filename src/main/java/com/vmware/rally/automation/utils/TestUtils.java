@@ -6,9 +6,8 @@ public class TestUtils {
 	
 	/**
 	 * Method for getting unique method name containing class full path
-	 * 
-	 * @param method
-	 * @return method name with class path
+	 * @param method   - ITestNGMethod
+	 * @return full method name including class path
 	 */
 	public static String getMethodFullName(ITestNGMethod method) {
 		if (method == null) {

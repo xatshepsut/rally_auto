@@ -1,14 +1,14 @@
-package com.vmware.rally.automation.testlisteners;
+package com.vmware.rally.automation.listener;
 
 import org.testng.ITestContext;
 import org.testng.ITestListener;
 import org.testng.ITestResult;
 
-import com.vmware.rally.automation.annotations.*;
+import com.vmware.rally.automation.data.annotation.*;
 import com.vmware.rally.automation.utils.TestUtils;
 
 
-public class RallyTestListener implements ITestListener {
+public class RTestListener implements ITestListener {
 	
 	/*
 	 * Invoked each time before a test will be invoked.
@@ -37,7 +37,7 @@ public class RallyTestListener implements ITestListener {
 		String methodName = TestUtils.getMethodFullName(result.getMethod());
 		
 		System.out.println("Test succeded: "  + methodName);
-	    System.out.println("Test case id: " + RallyInvokedMethodListener.getTestCaseForMethod(methodName).getId());
+	    System.out.println("Test case id: " + RInvokedMethodListener.getTestCaseForMethod(methodName).getId());
 	    System.out.println();
 	}
 
@@ -48,7 +48,7 @@ public class RallyTestListener implements ITestListener {
 		String methodName = TestUtils.getMethodFullName(result.getMethod());
 		
 		System.out.println("Test failed: "  + methodName);
-		System.out.println("Test case id: " + RallyInvokedMethodListener.getTestCaseForMethod(methodName).getId());
+		System.out.println("Test case id: " + RInvokedMethodListener.getTestCaseForMethod(methodName).getId());
 		System.out.println();
 	}
 	

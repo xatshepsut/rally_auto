@@ -1,4 +1,4 @@
-package com.vmware.rally.automation.testlisteners;
+package com.vmware.rally.automation.listener;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -8,16 +8,16 @@ import org.testng.IInvokedMethod;
 import org.testng.IInvokedMethodListener;
 import org.testng.ITestResult;
 
-import com.vmware.rally.automation.annotations.*;
-import com.vmware.rally.automation.data.RallyTestCase;
+import com.vmware.rally.automation.data.RTestCase;
+import com.vmware.rally.automation.data.annotation.*;
 import com.vmware.rally.automation.utils.TestUtils;
 
 
-public class RallyInvokedMethodListener implements IInvokedMethodListener    {
+public class RInvokedMethodListener implements IInvokedMethodListener    {
 
-	private static final Map<String, RallyTestCase> _testCaseMap = new HashMap<String, RallyTestCase>();
+	private static final Map<String, RTestCase> _testCaseMap = new HashMap<String, RTestCase>();
 
-	public static RallyTestCase getTestCaseForMethod(String methodName) {
+	public static RTestCase getTestCaseForMethod(String methodName) {
 		if (_testCaseMap.containsKey(methodName)) {
 			return _testCaseMap.get(methodName);
 		}
@@ -39,7 +39,7 @@ public class RallyInvokedMethodListener implements IInvokedMethodListener    {
 			TestCase tcAnnotation = method.getAnnotation(TestCase.class);
 			if (tcAnnotation != null) {
 				
-				RallyTestCase rtc = new RallyTestCase(tcAnnotation.id(), tcAnnotation.buildNumber(), tcAnnotation.testSetId());
+				RTestCase rtc = new RTestCase(tcAnnotation.id(), tcAnnotation.buildNumber(), tcAnnotation.testSetId());
 				_testCaseMap.put(TestUtils.getMethodFullName(invokedMethod.getTestMethod()), rtc);
 				
 			} else {

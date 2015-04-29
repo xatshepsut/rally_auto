@@ -8,7 +8,7 @@ import com.google.gson.JsonObject;
  * 
  * @author akaramyan
  */
-public class RallyTestCase {
+public class RTestCase {
 	
 	private String _id = "";
 	private String _buildNumber = "";
@@ -20,16 +20,16 @@ public class RallyTestCase {
 	
 	/* Constructors */
 	
-	public RallyTestCase(String id) {
+	public RTestCase(String id) {
 		setId(id);
 	}
 	
-	public RallyTestCase(String id, String buildNumber) {
+	public RTestCase(String id, String buildNumber) {
 		this(id);
 		setBuildNumber(buildNumber);
 	}
 	
-	public RallyTestCase(String id, String buildNumber, String testSetId) {
+	public RTestCase(String id, String buildNumber, String testSetId) {
 		this(id, buildNumber);
 		setTestSetId(testSetId);
 	}

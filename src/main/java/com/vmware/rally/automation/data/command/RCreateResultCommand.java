@@ -5,6 +5,11 @@ import java.io.IOException;
 import com.google.gson.JsonObject;
 import com.vmware.rally.automation.controller.RallyManager;
 
+/**
+ * RCreateResultCommand handles creation of TestCaseResult object in Rally. 
+ * Implements RCommand interface.
+ * @author akaramyan
+ */
 public class RCreateResultCommand implements RCommand {
 	
 	private JsonObject _testCase = null;

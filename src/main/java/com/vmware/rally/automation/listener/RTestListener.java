@@ -8,7 +8,11 @@ import com.vmware.rally.automation.controller.AutomationManager;
 import com.vmware.rally.automation.data.annotation.*;
 import com.vmware.rally.automation.utils.TestUtils;
 
-
+/**
+ * Listener class for test execution results.
+ * Implements ITestListener
+ * @author akaramyan
+ */
 public class RTestListener implements ITestListener {
 	
 	/**

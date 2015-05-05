@@ -1,7 +1,7 @@
 package com.vmware.rally.automation.data.command;
 
 /**
- * Envelop object containing RCommand and key as metadata.
+ * Envelop class containing RCommand and key as metadata.
  * @author akaramyan
  */
 public class RCommandEnvelop {

@@ -1,0 +1,7 @@
+com.vmware.rally.automation.controller
+com.vmware.rally.automation.data
+com.vmware.rally.automation.data.annotation
+com.vmware.rally.automation.data.command
+com.vmware.rally.automation.listener
+com.vmware.rally.automation.tests
+com.vmware.rally.automation.utils

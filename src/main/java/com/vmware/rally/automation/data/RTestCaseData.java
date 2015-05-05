@@ -3,8 +3,8 @@ package com.vmware.rally.automation.data;
 import com.google.gson.JsonObject;
 
 /**
- * Data container for keeping info retrieved from annotations
- * and JSON objects related to test
+ * Data container for keeping data about test:
+ * data retrieved from annotations and JSON objects
  * 
  * @author akaramyan
  */

@@ -5,6 +5,11 @@ import java.io.IOException;
 import com.google.gson.JsonObject;
 import com.vmware.rally.automation.controller.RallyManager;
 
+/**
+ * RGetCommand handles retrieving of objects from Rally. 
+ * Implements RCommand interface.
+ * @author akaramyan
+ */
 public class RGetCommand implements RCommand {
 	
 	public enum RGetCommandType {

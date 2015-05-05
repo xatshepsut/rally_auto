@@ -20,9 +20,16 @@ import com.rallydev.rest.response.QueryResponse;
 import com.rallydev.rest.util.Fetch;
 import com.rallydev.rest.util.QueryFilter;
 
-// TODO: move all hardcoded stings
+// TODO: get rid of hardcoded stings
 // TODO: add status report logs
 // TODO: catch IOException and fire custom exception more meaningful to user
+
+/**
+ * Manager class for handling Rally API REST calls.
+ * Singleton.
+ * 
+ * @author akaramyan
+ */
 
 @SuppressWarnings("unused")
 public class RallyManager {

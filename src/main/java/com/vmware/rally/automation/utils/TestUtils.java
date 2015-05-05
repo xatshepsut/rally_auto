@@ -2,6 +2,10 @@ package com.vmware.rally.automation.utils;
 
 import org.testng.ITestNGMethod;
 
+/**
+ * TestUtils provides helpful methods for working with TestNG classes.
+ * @author akaramyan
+ */
 public class TestUtils {
 	
 	/**

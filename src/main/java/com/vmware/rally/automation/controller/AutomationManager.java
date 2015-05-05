@@ -14,6 +14,13 @@ import com.vmware.rally.automation.data.command.RGetCommand;
 import com.vmware.rally.automation.data.command.RGetCommand.RGetCommandType;
 
 
+/**
+ * Manager class that handles everything.
+ * Singleton.
+ * 
+ * @author akaramyan
+ */
+
 public class AutomationManager {
 	
 	/** 
@@ -23,19 +30,22 @@ public class AutomationManager {
 	private Map<String, RTestCaseData> _dataMap = new HashMap<String, RTestCaseData>();
 	
 	/**
-	 * Queue with RCreateResultCommand objects that are not ready to be executed
+	 * Queue with RCreateResultCommand objects that are not ready to be executed.
 	 * Used by main thread, internal only.
 	 */
 	private Queue<RCommandEnvelop> pendingResultQueue = new LinkedList<RCommandEnvelop>();
 	
 	/** 
-	 * Map with results from command call
+	 * Map with results from command call.
 	 * Shared resource with command executor thread.
 	 */
 	private Map<String, Queue<JsonObject>> resultMap = new HashMap<String, Queue<JsonObject>> ();
 	
 	
 	// TEMP TODO: Move to child thread
+	/**
+	 * Queue with all commands to be executed.
+	 */
 	private Queue<RCommandEnvelop> commandQueue = new LinkedList<RCommandEnvelop>();
 	
 	
@@ -55,7 +65,12 @@ public class AutomationManager {
 	
 	/* Public Methods */
 	
-	// TODO: rename
+	/**
+	 * Processes test data and creates commands for retrieving
+	 *  test related objects from Rally.
+	 * @param testData  - RTestCaseData object containing annotation data
+	 * @param key       - String uniquely identifying test
+	 */
 	public void addTestData(RTestCaseData testData, String key) {
 		_dataMap.put(key, testData);	
 		
@@ -66,6 +81,11 @@ public class AutomationManager {
 		insertCommandWithKey(tsCommand, key);
 	}
 	
+	/**
+	 * Getter for test data related to test with given key.
+	 * @param key  - String uniquely identifying test
+	 * @return RTestCaseData related to test with <i>key</i>
+	 */
 	public RTestCaseData getTestDataWithKey(String key) {
 		if (_dataMap.containsKey(key)) {
 			return _dataMap.get(key);
@@ -73,6 +93,11 @@ public class AutomationManager {
 		return null;
 	}
 	
+	/**
+	 * Processes test result and creates test result creation command.
+	 * @param key       - String uniquely identifying test
+	 * @param verdict   - String test result status
+	 */
 	public void onFinishedTestWithKey(String key, String verdict) {
 		// Process result queue and get available data
 		processResultsWithKey(key);
@@ -95,7 +120,9 @@ public class AutomationManager {
 		
 	}
 	
-	// TEMP
+	/**
+	 * TEMP: Notifies to execute all commands.
+	 */
 	public void onFinishedTestSuite() {
 		executeCommands();
 	}
@@ -121,7 +148,8 @@ public class AutomationManager {
 		commandQueue.add(commandEnvelop);
 	}
 	
-	// TEMP TODO: Move to child thread
+	/** TEMP: Executes all commands from command queue.
+	 */
 	private void executeCommands() {
 		// Note: commandQueue contains only commands that are ready to be executed
 		// i.e. all necessary data is collected
@@ -146,7 +174,7 @@ public class AutomationManager {
 			resultMap.put(key, queue);
 		}
 		
-		// TEMP block
+		// TEMP^2 block
 		if (!pendingResultQueue.isEmpty()) {
 			while (!pendingResultQueue.isEmpty()) {
 				processPendingResultCommandQueue();

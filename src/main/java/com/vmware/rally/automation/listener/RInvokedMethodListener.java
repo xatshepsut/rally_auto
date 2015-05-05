@@ -11,12 +11,12 @@ import com.vmware.rally.automation.data.RTestCaseData;
 import com.vmware.rally.automation.data.annotation.TestCase;
 import com.vmware.rally.automation.utils.TestUtils;
 
-
+/**
+ * Listener class for test method invocation.
+ * Implements IInvokedMethodListener.
+ * @author akaramyan
+ */
 public class RInvokedMethodListener implements IInvokedMethodListener    {
-
-	/**
-	 * IInvokedMethodListener interface implementation
-	 */
 	
 	public void beforeInvocation(IInvokedMethod invokedMethod, ITestResult testResult) {
 		//System.out.println("Before invocation of " + invokedMethod.getTestMethod().getMethodName());

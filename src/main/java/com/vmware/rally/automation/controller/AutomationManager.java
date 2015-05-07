@@ -4,10 +4,15 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import com.google.gson.JsonObject;
 import com.vmware.rally.automation.data.RTestCaseData;
 import com.vmware.rally.automation.data.command.RCommand;
+import com.vmware.rally.automation.data.command.RCommandCallable;
 import com.vmware.rally.automation.data.command.RCommandEnvelop;
 import com.vmware.rally.automation.data.command.RCreateResultCommand;
 import com.vmware.rally.automation.data.command.RGetCommand;
@@ -29,29 +34,29 @@ public class AutomationManager {
 	 */
 	private Map<String, RTestCaseData> _dataMap = new HashMap<String, RTestCaseData>();
 	
-	/**
-	 * Queue with RCreateResultCommand objects that are not ready to be executed.
-	 * Used by main thread, internal only.
-	 */
-	private Queue<RCommandEnvelop> pendingResultQueue = new LinkedList<RCommandEnvelop>();
-	
 	/** 
 	 * Map with results from command call.
-	 * Shared resource with command executor thread.
+	 * Shared resource with command executor.
 	 */
-	private Map<String, Queue<JsonObject>> resultMap = new HashMap<String, Queue<JsonObject>> ();
+	private Map<String, Queue<Future<JsonObject>>> resultMap = new HashMap<String, Queue<Future<JsonObject>>> ();
 	
-	
-	// TEMP TODO: Move to child thread
 	/**
-	 * Queue with all commands to be executed.
+	 * ExecutorService for executing RCommands wrapped in RCommandCallable.
 	 */
-	private Queue<RCommandEnvelop> commandQueue = new LinkedList<RCommandEnvelop>();
+	private ExecutorService _commandExecutor = null;
+
+	/**
+	 * Queue with RCreateResultCommand objects that are not ready to be executed.
+	 */
+	private Queue<RCommandEnvelop> pendingResultQueue = new LinkedList<RCommandEnvelop>();
 	
 	
 	private AutomationManager() {
 		// Initializing rallyManager before first use
 		RallyManager.getInstance();
+		
+		// Initializing command executor with single thread
+		_commandExecutor = Executors.newSingleThreadExecutor();
 	}
 	
 	private static AutomationManager instance = null;
@@ -110,98 +115,106 @@ public class AutomationManager {
 		RCreateResultCommand command = 
 				new RCreateResultCommand(testData.getTestCaseJson(), testData.getTestSetJson(), 
 										 testData.getBuildNumber(), verdict);
-		RCommandEnvelop commandEnvelop = new RCommandEnvelop(command, key);
 		
 		if (command.isValid()) {
-			commandQueue.add(commandEnvelop);
+			insertCommandWithKey(command, key);
 		} else {
-			pendingResultQueue.add(commandEnvelop);
+			pendingResultQueue.add(new RCommandEnvelop(command, key));
 		}
 		
 	}
 	
 	/**
-	 * TEMP: Notifies to execute all commands.
+	 * Processes all pending commands and exits the application.
 	 */
 	public void onFinishedTestSuite() {
-		executeCommands();
+		if (!pendingResultQueue.isEmpty()) {
+			// Wait for all pending results to be ready in a loop
+			while (!pendingResultQueue.isEmpty()) {
+				processPendingResultCommandQueue();
+			}
+			
+			// Prevent executor from accepting new commands 
+			//and wait for all commands to complete
+			_commandExecutor.shutdown();
+			try {
+				_commandExecutor.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	
 	/* Private Methods */
 	
 	/**
-	 * Wraps command with given key inside command envelop and inserts into command queue.
+	 * Submits command with given key for execution.
 	 * @param command   - RCommand
 	 * @param key       - String uniquely identifying test
 	 */
 	private void insertCommandWithKey(RCommand command, String key) {
-		insertCommandEnvelop(new RCommandEnvelop(command, key));
+		// Submitting command for execution
+		RCommandCallable commandCallable = new RCommandCallable(command);
+		Future<JsonObject> future = _commandExecutor.submit(commandCallable);
+
+		addFutureWithKeyToResultMap(future, key);
 	}
 	
 	/**
-	 * Inserts command envelope into command queue.
-	 * @param commandEnvelop   - RCommandEnvelop
+	 * Adds given future to result map under given key.
+	 * @param future   - Future<JsonObject> containing JSON result
+	 * @param key      - String uniquely identifying test
 	 */
-	private void insertCommandEnvelop(RCommandEnvelop commandEnvelop) {
-		// TODO: add to queue inside child thread, if thread is dead create new one
-		commandQueue.add(commandEnvelop);
+	private void addFutureWithKeyToResultMap(Future<JsonObject> future, String key) {
+		Queue<Future<JsonObject>> resultQueue;
+		
+		if (resultMap.containsKey(key)) {
+			resultQueue = resultMap.get(key);
+		} else {
+			resultQueue = new LinkedList<Future<JsonObject>>();
+		}
+		
+		// Keeping future in result map to extract JSON result later
+		resultQueue.add(future);
+		resultMap.put(key, resultQueue);
 	}
 	
-	/** TEMP: Executes all commands from command queue.
-	 */
-	private void executeCommands() {
-		// Note: commandQueue contains only commands that are ready to be executed
-		// i.e. all necessary data is collected
-		
-		while (!commandQueue.isEmpty()) {
-			RCommandEnvelop commandWrapped = commandQueue.poll();
-			RCommand command = commandWrapped.getCommand();
-			
-			// TODO: create wrapper class for this part of code
-			JsonObject result = command.execute();
-			String key = commandWrapped.getKey();
-			
-			Queue<JsonObject> queue;
-			
-			if (resultMap.containsKey(key)) {
-				queue = resultMap.get(key);
-			} else {
-				queue = new LinkedList<JsonObject>();
-			}
-			
-			queue.add(result);
-			resultMap.put(key, queue);
-		}
-		
-		// TEMP^2 block
-		if (!pendingResultQueue.isEmpty()) {
-			while (!pendingResultQueue.isEmpty()) {
-				processPendingResultCommandQueue();
-			}
-			
-			executeCommands();
-		}
-	}
-
 	/**
 	 * Processes command results related to test with given key and updates data map.
 	 * @param key   - String uniquely identifying test
 	 */
 	private void processResultsWithKey(String key) {
-		Queue<JsonObject> queue = resultMap.get(key);
+		// Note: Here we assume all commands are executed in sequence.
+		// So if top future in the queue is not done yet, than others also are not ready.
 		
-		while (queue != null && !queue.isEmpty()) {
-			JsonObject json = queue.poll();
-			String type = json.get("_type").getAsString();
+		Queue<Future<JsonObject>> resultQueue = resultMap.get(key);
+		
+		while (resultQueue != null && !resultQueue.isEmpty()) {
+			Future<JsonObject> future = resultQueue.peek();
 			
-			if (type.equals("TestCase")) {
-				_dataMap.get(key).setTestCaseJson(json);
-			} else if (type.equals("TestSet")) {
-				_dataMap.get(key).setTestSetJson(json);
+			if (future.isDone()) {
+				// TODO: exception handling
+				JsonObject jsonResult;
+				
+				try {
+					jsonResult = future.get();
+					resultQueue.poll();
+					
+					if (jsonResult != null) {
+						String type = jsonResult.get("_type").getAsString();
+						
+						if (type.equals("TestCase")) {
+							_dataMap.get(key).setTestCaseJson(jsonResult);
+						} else if (type.equals("TestSet")) {
+							_dataMap.get(key).setTestSetJson(jsonResult);
+						}
+					}
+				} catch (/*InterruptedException | ExecutionException*/Exception e) {
+					e.printStackTrace();
+				}
 			} else {
-				// NOP
-				// TODO: print error message ?
+				break;
 			}
 		}
 	}
@@ -216,11 +229,12 @@ public class AutomationManager {
 		
 		while (!pendingResultQueue.isEmpty()) {
 			RCommandEnvelop pendingCommandEnvelop = pendingResultQueue.peek();
-			RCreateResultCommand pendingCommand = (RCreateResultCommand) pendingCommandEnvelop.getCommand();
+			RCreateResultCommand pendingCommand = (RCreateResultCommand) pendingCommandEnvelop.getCommand();			
+			String key = pendingCommandEnvelop.getKey();
 			
 			// TODO: encapsulate
-			processResultsWithKey(pendingCommandEnvelop.getKey());
-			RTestCaseData testData = _dataMap.get(pendingCommandEnvelop.getKey());
+			processResultsWithKey(key);
+			RTestCaseData testData = _dataMap.get(key);
 			
 			// TODO: make sure this really updates queue top element
 			// TODO: revise ?
@@ -229,7 +243,10 @@ public class AutomationManager {
 			pendingCommandEnvelop.setCommand(pendingCommand);
 			
 			if (pendingCommand.isValid()) {
-				insertCommandEnvelop(pendingCommandEnvelop);
+				RCommandCallable commandCallable = new RCommandCallable(pendingCommand);
+				Future<JsonObject> future = _commandExecutor.submit(commandCallable);
+				addFutureWithKeyToResultMap(future, key);
+				
 				pendingResultQueue.poll();
 			} else {
 				// Note: We assume all tests run in sequential order, same for related REST calls.

@@ -16,12 +16,14 @@ public class RCreateResultCommand implements RCommand {
 	private JsonObject _testSet = null;
 	private String _build = "";
 	private String _verdict = "";
+	private String _date = "";
 	
-	public RCreateResultCommand(JsonObject testCase, JsonObject testSet, String build, String verdict) {
+	public RCreateResultCommand(JsonObject testCase, JsonObject testSet, String build, String verdict, String date) {
 		setTestCase(testCase);
 		setTestSet(testSet);
 		setBuild(build);
 		setVerdict(verdict);
+		setDate(date);
 	}
 
 	public JsonObject execute() {
@@ -33,7 +35,7 @@ public class RCreateResultCommand implements RCommand {
 		JsonObject result = null;
 		
 		try {
-			result = RallyManager.getInstance().createTestCaseResult(_testCase, _testSet, _build, _verdict);
+			result = RallyManager.getInstance().createTestCaseResult(_testCase, _testSet, _build, _verdict, _date);
 		} catch (IOException exception) {
 			// TODO: handle
 		}
@@ -45,7 +47,8 @@ public class RCreateResultCommand implements RCommand {
 		// We assume it's not possible to run TC without referencing TS
 		// In case different functionality is also required, it will be add later.
 		
-		return !(_testCase == null || _testSet == null || _build.isEmpty() || _verdict.isEmpty());
+		return !(_testCase == null || _testSet == null || 
+				_build.isEmpty() || _verdict.isEmpty() || _date.isEmpty());
 	}
 	
 	
@@ -77,5 +80,12 @@ public class RCreateResultCommand implements RCommand {
 	}
 	public void setVerdict(String verdict) {
 		_verdict = verdict;
+	}
+	
+	public String getDate() {
+		return _date;
+	}
+	public void setDate(String date) {
+		_date = date;
 	}
 }

@@ -26,6 +26,11 @@ import com.vmware.rally.automation.data.command.RGetCommand.RGetCommandType;
  * @author akaramyan
  */
 
+// TODO: Global todos
+// TODO: add status report logs
+// TODO: catch IOException in commands and fire custom exception more meaningful to user
+
+
 public class AutomationManager {
 	
 	/** 
@@ -104,6 +109,9 @@ public class AutomationManager {
 	 * @param verdict   - String test result status
 	 */
 	public void onFinishedTestWithKey(String key, String verdict) {
+		// Date/time when test finished execution
+		String date = RallyManager.getInstance().getCurrentDate();
+		
 		// Process result queue and get available data
 		processResultsWithKey(key);
 		
@@ -114,7 +122,7 @@ public class AutomationManager {
 		RTestCaseData testData = _dataMap.get(key);
 		RCreateResultCommand command = 
 				new RCreateResultCommand(testData.getTestCaseJson(), testData.getTestSetJson(), 
-										 testData.getBuildNumber(), verdict);
+										 testData.getBuildNumber(), verdict, date);
 		
 		if (command.isValid()) {
 			insertCommandWithKey(command, key);

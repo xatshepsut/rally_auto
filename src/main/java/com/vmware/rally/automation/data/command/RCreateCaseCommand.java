@@ -13,9 +13,13 @@ import com.vmware.rally.automation.controller.RallyManager;
 public class RCreateCaseCommand implements RCommand {
 	
 	private String _name = "";
+	private String _type = "";
+	private String _method = "";
 
-	public RCreateCaseCommand(String name) {
+	public RCreateCaseCommand(String name, String type, String method) {
 		setName(name);
+		setType(type);
+		setMethod(method);
 	}
 
 	public JsonObject execute() {
@@ -27,7 +31,7 @@ public class RCreateCaseCommand implements RCommand {
 		JsonObject result = null;
 		
 		try {
-			result = RallyManager.getInstance().createTestCase(_name);
+			result = RallyManager.getInstance().createTestCase(_name, _type, _method);
 		} catch (IOException exception) {
 			// TODO: handle
 		}
@@ -47,6 +51,20 @@ public class RCreateCaseCommand implements RCommand {
 	}
 	public void setName(String name) {
 		_name = name;
+	}
+	
+	public String getType() {
+		return _type;
+	}
+	public void setType(String type) {
+		_type = type;
+	}
+	
+	public String getMethod() {
+		return _method;
+	}
+	public void setMethod(String method) {
+		_method = method;
 	}
 	
 }

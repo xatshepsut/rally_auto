@@ -5,6 +5,7 @@ import org.testng.ITestListener;
 import org.testng.ITestResult;
 
 import com.vmware.rally.automation.controller.AutomationManager;
+import com.vmware.rally.automation.data.RTestCaseData;
 import com.vmware.rally.automation.data.annotation.*;
 import com.vmware.rally.automation.utils.TestUtils;
 
@@ -35,12 +36,15 @@ public class RTestListener implements ITestListener {
 	 */
 	public void onTestSuccess(ITestResult result) {
 		String methodName = TestUtils.getMethodFullName(result.getMethod());
-		
 		System.out.println("Test succeded: "  + methodName);
-	    System.out.println("Test case id: " + AutomationManager.getInstance().getTestDataWithKey(methodName).getId());
-	    System.out.println();
-	    
-	    AutomationManager.getInstance().onFinishedTestWithKey(methodName, "Pass");
+		
+		RTestCaseData testData = AutomationManager.getInstance().getTestDataWithKey(methodName);
+		if (testData != null) {
+	    	System.out.println("Test case id: " + testData.getId());
+	    	AutomationManager.getInstance().onFinishedTestWithKey(methodName, "Pass");
+		}
+		
+		System.out.println();
 	}
 
 	/**
@@ -48,12 +52,15 @@ public class RTestListener implements ITestListener {
 	 */
 	public void onTestFailure(ITestResult result) {
 		String methodName = TestUtils.getMethodFullName(result.getMethod());
-		
 		System.out.println("Test failed: "  + methodName);
-		System.out.println("Test case id: " + AutomationManager.getInstance().getTestDataWithKey(methodName).getId());
-		System.out.println();
 		
-		AutomationManager.getInstance().onFinishedTestWithKey(methodName, "Fail");
+		RTestCaseData testData = AutomationManager.getInstance().getTestDataWithKey(methodName);
+		if (testData != null) {
+			System.out.println("Test case id: " + testData.getId());
+			AutomationManager.getInstance().onFinishedTestWithKey(methodName, "Fail");
+		}
+		
+		System.out.println();
 	}
 
 	/**
@@ -79,6 +86,8 @@ public class RTestListener implements ITestListener {
 	public void onStart(ITestContext context) {
 		System.out.println("Test suit started: " + context.getName());
 		System.out.println();
+		
+		System.out.println(context.getAllTestMethods());
 	}
 
 	/**
@@ -88,7 +97,7 @@ public class RTestListener implements ITestListener {
 		System.out.println("Test suit finished: " + context.getName());
 		System.out.println();
 		
-		AutomationManager.getInstance().onFinishedTestSuite();
+//		AutomationManager.getInstance().onFinishedTestSuite();
 	}
 
 

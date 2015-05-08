@@ -2,8 +2,10 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
 
 <suite name="Suite_1" parallel="none">
-
+  <testcase id="TC1" />
+  
   <listeners>
+    <listener class-name="com.vmware.rally.automation.listener.RSuiteListener" />
     <listener class-name="com.vmware.rally.automation.listener.RTestListener" />
     <listener class-name="com.vmware.rally.automation.listener.RInvokedMethodListener" />
   </listeners>
@@ -13,6 +15,12 @@
       <class name="com.vmware.rally.automation.tests.SampleTest"/>
     </classes>
   </test> <!-- Test_1 -->
+  
+   <test name="Test_2">
+    <classes>
+      <class name="com.vmware.rally.automation.tests.SampleTest2"/>
+    </classes>
+  </test> <!-- Test_2 -->
   
   
 </suite> <!-- Suite_1 -->

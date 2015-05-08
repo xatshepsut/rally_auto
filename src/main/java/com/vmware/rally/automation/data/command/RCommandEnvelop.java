@@ -6,8 +6,8 @@ package com.vmware.rally.automation.data.command;
  */
 public class RCommandEnvelop {
 	
-	private RCommand _command = null;
-	private String _key = "";
+	private RCommand _command;
+	private String _key;
 	
 	public RCommandEnvelop(RCommand command, String key) {
 		setCommand(command);

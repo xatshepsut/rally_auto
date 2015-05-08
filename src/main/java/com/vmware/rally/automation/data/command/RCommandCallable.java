@@ -10,7 +10,7 @@ import com.google.gson.JsonObject;
  * @author akaramyan
  */
 public class RCommandCallable implements Callable<JsonObject> {
-	private RCommand _command = null;
+	private RCommand _command;
 	
 	public RCommandCallable(RCommand command) {
 		_command = command;

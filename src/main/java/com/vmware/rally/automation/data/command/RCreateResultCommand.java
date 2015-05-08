@@ -1,9 +1,11 @@
 package com.vmware.rally.automation.data.command;
 
 import java.io.IOException;
+import java.util.Date;
 
 import com.google.gson.JsonObject;
 import com.vmware.rally.automation.controller.RallyManager;
+import com.vmware.rally.automation.data.enums.RTestResultVerdict;
 
 /**
  * RCreateResultCommand handles creation of TestCaseResult object in Rally. 
@@ -12,13 +14,14 @@ import com.vmware.rally.automation.controller.RallyManager;
  */
 public class RCreateResultCommand implements RCommand {
 	
-	private JsonObject _testCase = null;
-	private JsonObject _testSet = null;
-	private String _build = "";
-	private String _verdict = "";
-	private String _date = "";
+	private JsonObject _testCase;
+	private JsonObject _testSet;
+	private String _build;
+	private RTestResultVerdict _verdict;
+	private Date _date;
 	
-	public RCreateResultCommand(JsonObject testCase, JsonObject testSet, String build, String verdict, String date) {
+	public RCreateResultCommand(JsonObject testCase, JsonObject testSet, String build,
+			RTestResultVerdict verdict, Date date) {
 		setTestCase(testCase);
 		setTestSet(testSet);
 		setBuild(build);
@@ -47,8 +50,8 @@ public class RCreateResultCommand implements RCommand {
 		// We assume it's not possible to run TC without referencing TS
 		// In case different functionality is also required, it will be add later.
 		
-		return !(_testCase == null || _testSet == null || 
-				_build.isEmpty() || _verdict.isEmpty() || _date.isEmpty());
+		return !(_testCase == null || _testSet == null || (_build == null || _build.isEmpty()) 
+				|| _verdict == null || _date == null);
 	}
 	
 	
@@ -75,17 +78,17 @@ public class RCreateResultCommand implements RCommand {
 		_build = build;
 	}
 	
-	public String getVerdict() {
+	public RTestResultVerdict getVerdict() {
 		return _verdict;
 	}
-	public void setVerdict(String verdict) {
+	public void setVerdict(RTestResultVerdict verdict) {
 		_verdict = verdict;
 	}
 	
-	public String getDate() {
+	public Date getDate() {
 		return _date;
 	}
-	public void setDate(String date) {
+	public void setDate(Date date) {
 		_date = date;
 	}
 }

@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import com.google.gson.JsonObject;
 import com.vmware.rally.automation.controller.RallyManager;
+import com.vmware.rally.automation.data.enums.RTestMethod;
+import com.vmware.rally.automation.data.enums.RTestType;
 
 /**
  * RCreateCaseCommand handles creation of TestCase object in Rally. 
@@ -12,11 +14,11 @@ import com.vmware.rally.automation.controller.RallyManager;
  */
 public class RCreateCaseCommand implements RCommand {
 	
-	private String _name = "";
-	private String _type = "";
-	private String _method = "";
+	private String _name;
+	private RTestType _type;
+	private RTestMethod _method;
 
-	public RCreateCaseCommand(String name, String type, String method) {
+	public RCreateCaseCommand(String name, RTestType type, RTestMethod method) {
 		setName(name);
 		setType(type);
 		setMethod(method);
@@ -40,7 +42,7 @@ public class RCreateCaseCommand implements RCommand {
 	}
 	
 	public boolean isValid() {
-		return !(_name.isEmpty());
+		return !((_name == null || _name.isEmpty()) || _type == null || _method == null);
 	}
 	
 	
@@ -53,17 +55,17 @@ public class RCreateCaseCommand implements RCommand {
 		_name = name;
 	}
 	
-	public String getType() {
+	public RTestType getType() {
 		return _type;
 	}
-	public void setType(String type) {
+	public void setType(RTestType type) {
 		_type = type;
 	}
 	
-	public String getMethod() {
+	public RTestMethod getMethod() {
 		return _method;
 	}
-	public void setMethod(String method) {
+	public void setMethod(RTestMethod method) {
 		_method = method;
 	}
 	

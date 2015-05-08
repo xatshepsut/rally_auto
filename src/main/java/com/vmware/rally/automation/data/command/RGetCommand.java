@@ -13,11 +13,11 @@ import com.vmware.rally.automation.controller.RallyManager;
 public class RGetCommand implements RCommand {
 	
 	public enum RGetCommandType {
-		GET_TEST_CASE, GET_TEST_SET, NOP;
+		GET_TEST_CASE, GET_TEST_SET;
 	}
 	
-	private String _id = "";
-	private RGetCommandType _type = RGetCommandType.NOP;
+	private String _id;
+	private RGetCommandType _type;
 	
 	public RGetCommand(String id, RGetCommandType type) {
 		setId(id);
@@ -46,7 +46,7 @@ public class RGetCommand implements RCommand {
 	}
 	
 	public boolean isValid() {
-		return !(_id.isEmpty());
+		return !((_id == null || _id.isEmpty()) || _type == null);
 	}
 	
 	

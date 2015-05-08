@@ -14,11 +14,7 @@ public class TestUtils {
 	 * @return full method name including class path
 	 */
 	public static String getMethodFullName(ITestNGMethod method) {
-		if (method == null) {
-			return null;
-		}
-		
-		return method.getRealClass().getName() + "." + method.getMethodName();
+		return method != null ? method.getRealClass().getName() + "." + method.getMethodName() : "";
 	}
 	
 }

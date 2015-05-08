@@ -5,7 +5,7 @@ import org.testng.ITestListener;
 import org.testng.ITestResult;
 
 import com.vmware.rally.automation.controller.AutomationManager;
-import com.vmware.rally.automation.data.annotation.*;
+import com.vmware.rally.automation.data.enums.RTestResultVerdict;
 import com.vmware.rally.automation.utils.TestUtils;
 
 /**
@@ -20,14 +20,17 @@ public class RTestListener implements ITestListener {
 	 * The ITestResult is only partially filled with the references to class, method, start millis and status.
 	 */
 	public void onTestStart(ITestResult result) {
-		System.out.println("Test started: "  + result.getMethod().getMethodName());
+		String methodName = TestUtils.getMethodFullName(result.getMethod());
+		System.out.println("Started running test method "  + methodName);
 		
+		/*
+		// Sample code for retrieving annotation
+		// TODO: Move here annotation retrieval code from RInvokedMethodListener
 		TestCase tcAnnotation = result.getMethod().getConstructorOrMethod().getMethod().getAnnotation(TestCase.class);
 		if (tcAnnotation != null) {
-			System.out.println("Test case id: " + tcAnnotation.id());
+			System.out.println("Test case id from annotation " + tcAnnotation.id());
 		}
-		
-		System.out.println();
+		*/
 	}
 
 	/**
@@ -35,12 +38,9 @@ public class RTestListener implements ITestListener {
 	 */
 	public void onTestSuccess(ITestResult result) {
 		String methodName = TestUtils.getMethodFullName(result.getMethod());
-		
-		System.out.println("Test succeded: "  + methodName);
-	    System.out.println("Test case id: " + AutomationManager.getInstance().getTestDataWithKey(methodName).getId());
-	    System.out.println();
+		System.out.println("Test method "  + methodName + " passed");
 	    
-	    AutomationManager.getInstance().onFinishedTestWithKey(methodName, "Pass");
+	    AutomationManager.getInstance().onFinishedTestWithVerdict(methodName, RTestResultVerdict.PASS);
 	}
 
 	/**
@@ -48,20 +48,17 @@ public class RTestListener implements ITestListener {
 	 */
 	public void onTestFailure(ITestResult result) {
 		String methodName = TestUtils.getMethodFullName(result.getMethod());
+		System.out.println("Test method "  + methodName + " failed");
 		
-		System.out.println("Test failed: "  + methodName);
-		System.out.println("Test case id: " + AutomationManager.getInstance().getTestDataWithKey(methodName).getId());
-		System.out.println();
-		
-		AutomationManager.getInstance().onFinishedTestWithKey(methodName, "Fail");
+		AutomationManager.getInstance().onFinishedTestWithVerdict(methodName, RTestResultVerdict.FAIL);
 	}
 
 	/**
 	 * Invoked each time a test is skipped.
 	 */
 	public void onTestSkipped(ITestResult result) {
-		System.out.println("Test skipped: "  + result.getMethod().getMethodName());
-		System.out.println();
+		String methodName = TestUtils.getMethodFullName(result.getMethod());
+		System.out.println("Test method "  + methodName + " is skipped");
 	}
 
 	/**
@@ -69,26 +66,25 @@ public class RTestListener implements ITestListener {
 	 * and this failure still keeps it within the success percentage requested.
 	 */
 	public void onTestFailedButWithinSuccessPercentage(ITestResult result) {
-		System.out.println("Test failed with success percentage: "  + result.getMethod().getMethodName());
-		System.out.println();
+		String methodName = TestUtils.getMethodFullName(result.getMethod());
+		System.out.println("Test method "  + methodName + " failed with sucess percantage.");
 	}
 
 	/**
 	 * Invoked after the test class is instantiated and before any configuration method is called.
 	 */
 	public void onStart(ITestContext context) {
-		System.out.println("Test suit started: " + context.getName());
-		System.out.println();
+		System.out.println("Started running test "  + context.getName());
 	}
 
 	/**
 	 * Invoked after all the tests have run and all their Configuration methods have been called.
 	 */
 	public void onFinish(ITestContext context) {
-		System.out.println("Test suit finished: " + context.getName());
+		System.out.println("Finished running test "  + context.getName());
 		System.out.println();
 		
-		AutomationManager.getInstance().onFinishedTestSuite();
+		AutomationManager.getInstance().onComplete();
 	}
 
 

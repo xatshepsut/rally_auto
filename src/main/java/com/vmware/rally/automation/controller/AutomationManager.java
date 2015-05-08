@@ -1,22 +1,26 @@
 package com.vmware.rally.automation.controller;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import com.google.gson.JsonObject;
-import com.vmware.rally.automation.data.RTestCaseData;
+import com.vmware.rally.automation.data.RTestData;
 import com.vmware.rally.automation.data.command.RCommand;
 import com.vmware.rally.automation.data.command.RCommandCallable;
 import com.vmware.rally.automation.data.command.RCommandEnvelop;
 import com.vmware.rally.automation.data.command.RCreateResultCommand;
 import com.vmware.rally.automation.data.command.RGetCommand;
 import com.vmware.rally.automation.data.command.RGetCommand.RGetCommandType;
+import com.vmware.rally.automation.data.enums.RTestResultVerdict;
 
 
 /**
@@ -26,39 +30,41 @@ import com.vmware.rally.automation.data.command.RGetCommand.RGetCommandType;
  * @author akaramyan
  */
 
-// TODO: Global todos
-// TODO: add status report logs
-// TODO: catch IOException in commands and fire custom exception more meaningful to user
+// TODO: add exception handling and logs !
 
-
+@SuppressWarnings("unused")
 public class AutomationManager {
 	
 	/** 
 	 * Map with test data: data from annotations, data from command execution results.
-	 * Used by main thread.
 	 */
-	private Map<String, RTestCaseData> _dataMap = new HashMap<String, RTestCaseData>();
+	private Map<String, RTestData> _dataMap = new HashMap<String, RTestData>();
 	
 	/** 
 	 * Map with results from command call.
 	 * Shared resource with command executor.
 	 */
-	private Map<String, Queue<Future<JsonObject>>> resultMap = new HashMap<String, Queue<Future<JsonObject>>> ();
-	
-	/**
-	 * ExecutorService for executing RCommands wrapped in RCommandCallable.
-	 */
-	private ExecutorService _commandExecutor = null;
+	private Map<String, Queue<Future<JsonObject>>> _resultMap = new HashMap<String, Queue<Future<JsonObject>>> ();
 
 	/**
 	 * Queue with RCreateResultCommand objects that are not ready to be executed.
 	 */
-	private Queue<RCommandEnvelop> pendingResultQueue = new LinkedList<RCommandEnvelop>();
+	private Queue<RCommandEnvelop> _pendingResultQueue = new LinkedList<RCommandEnvelop>();
+	
+	/**
+	 * ExecutorService for executing RCommands wrapped in RCommandCallable.
+	 */
+	private ExecutorService _commandExecutor;
+
+	
+	// TODO: replace
+	public static String API_KEY = "_OhYE7czYRo2y2tR6il3lyJQsoJGhP0T1gM8JqCFZMlg";
+	public static String USER_EMAIL = "bobbrown@dispostable.com";
 	
 	
 	private AutomationManager() {
-		// Initializing rallyManager before first use
-		RallyManager.getInstance();
+		// Initializing RallyManager before first use
+		RallyManager.getInstance().initialize(USER_EMAIL, API_KEY);
 		
 		// Initializing command executor with single thread
 		_commandExecutor = Executors.newSingleThreadExecutor();
@@ -81,8 +87,8 @@ public class AutomationManager {
 	 * @param testData  - RTestCaseData object containing annotation data
 	 * @param key       - String uniquely identifying test
 	 */
-	public void addTestData(RTestCaseData testData, String key) {
-		_dataMap.put(key, testData);	
+	public void addTestData(RTestData testData, String key) {
+		setTestDataForKey(testData, key);
 		
 		RGetCommand tcCommand = new RGetCommand(testData.getId(), RGetCommandType.GET_TEST_CASE);
 		insertCommandWithKey(tcCommand, key);
@@ -92,42 +98,27 @@ public class AutomationManager {
 	}
 	
 	/**
-	 * Getter for test data related to test with given key.
-	 * @param key  - String uniquely identifying test
-	 * @return RTestCaseData related to test with <i>key</i>
-	 */
-	public RTestCaseData getTestDataWithKey(String key) {
-		if (_dataMap.containsKey(key)) {
-			return _dataMap.get(key);
-		}
-		return null;
-	}
-	
-	/**
 	 * Processes test result and creates test result creation command.
 	 * @param key       - String uniquely identifying test
 	 * @param verdict   - String test result status
 	 */
-	public void onFinishedTestWithKey(String key, String verdict) {
-		// Date/time when test finished execution
-		String date = RallyManager.getInstance().getCurrentDate();
-		
+	public void onFinishedTestWithVerdict(String key, RTestResultVerdict verdict) {
 		// Process result queue and get available data
 		processResultsWithKey(key);
 		
 		// Process pending results
 		processPendingResultCommandQueue();
 		
-		// Create new result command
-		RTestCaseData testData = _dataMap.get(key);
+		// Create new create result command
+		RTestData testData = getTestDataForKey(key);
 		RCreateResultCommand command = 
 				new RCreateResultCommand(testData.getTestCaseJson(), testData.getTestSetJson(), 
-										 testData.getBuildNumber(), verdict, date);
+										 testData.getBuildNumber(), verdict, new Date());
 		
 		if (command.isValid()) {
 			insertCommandWithKey(command, key);
 		} else {
-			pendingResultQueue.add(new RCommandEnvelop(command, key));
+			_pendingResultQueue.add(new RCommandEnvelop(command, key));
 		}
 		
 	}
@@ -135,20 +126,20 @@ public class AutomationManager {
 	/**
 	 * Processes all pending commands and exits the application.
 	 */
-	public void onFinishedTestSuite() {
-		if (!pendingResultQueue.isEmpty()) {
+	public void onComplete() {
+		if (!_pendingResultQueue.isEmpty()) {
 			// Wait for all pending results to be ready in a loop
-			while (!pendingResultQueue.isEmpty()) {
+			while (!_pendingResultQueue.isEmpty()) {
 				processPendingResultCommandQueue();
 			}
 			
 			// Prevent executor from accepting new commands 
-			//and wait for all commands to complete
+			// and wait for all commands to complete
 			_commandExecutor.shutdown();
 			try {
 				_commandExecutor.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				// Error: interrupted while waiting 
 			}
 		}
 	}
@@ -162,30 +153,46 @@ public class AutomationManager {
 	 * @param key       - String uniquely identifying test
 	 */
 	private void insertCommandWithKey(RCommand command, String key) {
-		// Submitting command for execution
 		RCommandCallable commandCallable = new RCommandCallable(command);
 		Future<JsonObject> future = _commandExecutor.submit(commandCallable);
-
-		addFutureWithKeyToResultMap(future, key);
+		addFutureToResultsWithKey(future, key);
 	}
 	
 	/**
-	 * Adds given future to result map under given key.
+	 * Adds future to given key queue in result map.
 	 * @param future   - Future<JsonObject> containing JSON result
 	 * @param key      - String uniquely identifying test
 	 */
-	private void addFutureWithKeyToResultMap(Future<JsonObject> future, String key) {
+	private void addFutureToResultsWithKey(Future<JsonObject> future, String key) {
 		Queue<Future<JsonObject>> resultQueue;
 		
-		if (resultMap.containsKey(key)) {
-			resultQueue = resultMap.get(key);
+		if (_resultMap.containsKey(key)) {
+			resultQueue = _resultMap.get(key);
 		} else {
 			resultQueue = new LinkedList<Future<JsonObject>>();
 		}
 		
 		// Keeping future in result map to extract JSON result later
 		resultQueue.add(future);
-		resultMap.put(key, resultQueue);
+		_resultMap.put(key, resultQueue);
+	}
+	
+	/**
+	 * Returns test data with given key from data map.
+	 * @param key  - String uniquely identifying test
+	 * @return RTestCaseData related to test with <i>key</i>
+	 */
+	private RTestData getTestDataForKey(String key) {
+		return _dataMap.get(key);
+	}
+	
+	/**
+	 * Sets test data for given key in data map.
+	 * @param testData  - RTestCaseData to add
+	 * @param key       - String uniquely identifying test
+	 */
+	private void setTestDataForKey(RTestData testData, String key) {
+		_dataMap.put(key, testData);	
 	}
 	
 	/**
@@ -196,30 +203,31 @@ public class AutomationManager {
 		// Note: Here we assume all commands are executed in sequence.
 		// So if top future in the queue is not done yet, than others also are not ready.
 		
-		Queue<Future<JsonObject>> resultQueue = resultMap.get(key);
+		Queue<Future<JsonObject>> resultQueue = _resultMap.get(key);
 		
 		while (resultQueue != null && !resultQueue.isEmpty()) {
 			Future<JsonObject> future = resultQueue.peek();
 			
 			if (future.isDone()) {
-				// TODO: exception handling
-				JsonObject jsonResult;
+				resultQueue.poll();
 				
 				try {
-					jsonResult = future.get();
-					resultQueue.poll();
+					JsonObject jsonResult = future.get();
+
+					String type = jsonResult.get("_type").getAsString();
+					RTestData testData  = getTestDataForKey(key);
+					assert testData != null;
 					
-					if (jsonResult != null) {
-						String type = jsonResult.get("_type").getAsString();
-						
-						if (type.equals("TestCase")) {
-							_dataMap.get(key).setTestCaseJson(jsonResult);
-						} else if (type.equals("TestSet")) {
-							_dataMap.get(key).setTestSetJson(jsonResult);
-						}
+					if (type.equals("TestCase")) {
+						testData.setTestCaseJson(jsonResult);
+					} else if (type.equals("TestSet")) {
+						testData.setTestSetJson(jsonResult);
 					}
-				} catch (/*InterruptedException | ExecutionException*/Exception e) {
-					e.printStackTrace();
+				} catch (InterruptedException e) {
+					// Error: command was interrupted
+				} catch (ExecutionException e) {
+					// Error: exception was thrown by command
+					// TODO: handle
 				}
 			} else {
 				break;
@@ -233,33 +241,32 @@ public class AutomationManager {
 	 * Moves completed commands to command queue.
 	 */
 	private void processPendingResultCommandQueue() {
-		assert pendingResultQueue != null;
+		assert _pendingResultQueue != null;
 		
-		while (!pendingResultQueue.isEmpty()) {
-			RCommandEnvelop pendingCommandEnvelop = pendingResultQueue.peek();
+		while (!_pendingResultQueue.isEmpty()) {
+			RCommandEnvelop pendingCommandEnvelop = _pendingResultQueue.peek();
 			RCreateResultCommand pendingCommand = (RCreateResultCommand) pendingCommandEnvelop.getCommand();			
 			String key = pendingCommandEnvelop.getKey();
 			
-			// TODO: encapsulate
 			processResultsWithKey(key);
-			RTestCaseData testData = _dataMap.get(key);
+			RTestData testData = getTestDataForKey(key);
 			
-			// TODO: make sure this really updates queue top element
-			// TODO: revise ?
 			pendingCommand.setTestCase(testData.getTestCaseJson());
 			pendingCommand.setTestSet(testData.getTestSetJson());
-			pendingCommandEnvelop.setCommand(pendingCommand);
 			
 			if (pendingCommand.isValid()) {
 				RCommandCallable commandCallable = new RCommandCallable(pendingCommand);
 				Future<JsonObject> future = _commandExecutor.submit(commandCallable);
-				addFutureWithKeyToResultMap(future, key);
+				addFutureToResultsWithKey(future, key);
 				
-				pendingResultQueue.poll();
+				_pendingResultQueue.poll();
 			} else {
 				// Note: We assume all tests run in sequential order, same for related REST calls.
 				// This means if data for completing top element in queue is not available
 				// than data for next one in queue cannot be available either.
+				
+				// Update queue top and exit
+				pendingCommandEnvelop.setCommand(pendingCommand);
 				break;
 			}
 		}

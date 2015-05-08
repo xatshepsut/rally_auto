@@ -7,7 +7,7 @@ import org.testng.IInvokedMethodListener;
 import org.testng.ITestResult;
 
 import com.vmware.rally.automation.controller.AutomationManager;
-import com.vmware.rally.automation.data.RTestCaseData;
+import com.vmware.rally.automation.data.RTestData;
 import com.vmware.rally.automation.data.annotation.TestCase;
 import com.vmware.rally.automation.utils.TestUtils;
 
@@ -23,18 +23,14 @@ public class RInvokedMethodListener implements IInvokedMethodListener    {
 
 		if (invokedMethod.isTestMethod()) {
 			Method method = invokedMethod.getTestMethod().getConstructorOrMethod().getMethod();
-			
 			TestCase tcAnnotation = method.getAnnotation(TestCase.class);
+			
 			if (tcAnnotation != null) {
-				
-				RTestCaseData testCaseData = new RTestCaseData(tcAnnotation.id(), tcAnnotation.buildNumber(), tcAnnotation.testSetId());
 				String methodName = TestUtils.getMethodFullName(invokedMethod.getTestMethod());
-				
+				RTestData testCaseData = 
+						new RTestData(tcAnnotation.id(), tcAnnotation.buildNumber(), tcAnnotation.testSetId());
 				AutomationManager.getInstance().addTestData(testCaseData, methodName);
-				
-			} else {
-				// NOP
-			}	
+			}
 		}
 	}
 	

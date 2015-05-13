@@ -1,11 +1,13 @@
 package com.vmware.rally.automation.data.command;
 
-import java.io.IOException;
 import java.util.Date;
 
 import com.google.gson.JsonObject;
 import com.vmware.rally.automation.controller.RallyManager;
 import com.vmware.rally.automation.data.enums.RTestResultVerdict;
+import com.vmware.rally.automation.exception.InvalidRCommandException;
+import com.vmware.rally.automation.exception.RTaskException;
+import com.vmware.rally.automation.exception.UninitializedRallyApiException;
 
 /**
  * RCreateResultCommand handles creation of TestCaseResult object in Rally. 
@@ -29,19 +31,12 @@ public class RCreateResultCommand implements RCommand {
 		setDate(date);
 	}
 
-	public JsonObject execute() {
+	public JsonObject execute() throws RTaskException, UninitializedRallyApiException, InvalidRCommandException {
 		if (!isValid()) {
-			// TODO: throw exception
-			return null;
+			throw new InvalidRCommandException();
 		}
 		
-		JsonObject result = null;
-		
-		try {
-			result = RallyManager.getInstance().createTestCaseResult(_testCase, _testSet, _build, _verdict, _date);
-		} catch (IOException exception) {
-			// TODO: handle
-		}
+		JsonObject result = RallyManager.getInstance().createTestCaseResult(_testCase, _testSet, _build, _verdict, _date);
 		
         return result;
 	}

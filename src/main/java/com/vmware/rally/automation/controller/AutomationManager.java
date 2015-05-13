@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,9 +29,6 @@ import com.vmware.rally.automation.data.enums.RTestResultVerdict;
  * @author akaramyan
  */
 
-// TODO: add exception handling and logs !
-
-@SuppressWarnings("unused")
 public class AutomationManager {
 	
 	/** 
@@ -224,10 +220,11 @@ public class AutomationManager {
 						testData.setTestSetJson(jsonResult);
 					}
 				} catch (InterruptedException e) {
-					// Error: command was interrupted
+					// Unexpected error: Command was interrupted
+					// TODO: retry command
 				} catch (ExecutionException e) {
-					// Error: exception was thrown by command
-					// TODO: handle
+					// Error: Exception was thrown by command
+					System.out.println(e.getCause().getMessage());
 				}
 			} else {
 				break;

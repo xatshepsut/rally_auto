@@ -1,11 +1,12 @@
 package com.vmware.rally.automation.data.command;
 
-import java.io.IOException;
-
 import com.google.gson.JsonObject;
 import com.vmware.rally.automation.controller.RallyManager;
 import com.vmware.rally.automation.data.enums.RTestMethod;
 import com.vmware.rally.automation.data.enums.RTestType;
+import com.vmware.rally.automation.exception.InvalidRCommandException;
+import com.vmware.rally.automation.exception.RTaskException;
+import com.vmware.rally.automation.exception.UninitializedRallyApiException;
 
 /**
  * RCreateCaseCommand handles creation of TestCase object in Rally. 
@@ -24,21 +25,14 @@ public class RCreateCaseCommand implements RCommand {
 		setMethod(method);
 	}
 
-	public JsonObject execute() {
+	public JsonObject execute() throws RTaskException, UninitializedRallyApiException, InvalidRCommandException {
 		if (!isValid()) {
-			// TODO: throw exception
-			return null;
+			throw new InvalidRCommandException();
 		}
 		
-		JsonObject result = null;
-		
-		try {
-			result = RallyManager.getInstance().createTestCase(_name, _type, _method);
-		} catch (IOException exception) {
-			// TODO: handle
-		}
-		
-        return result;
+		JsonObject result = RallyManager.getInstance().createTestCase(_name, _type, _method);
+
+		return result;
 	}
 	
 	public boolean isValid() {

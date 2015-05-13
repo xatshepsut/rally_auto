@@ -22,6 +22,9 @@ import com.rallydev.rest.util.QueryFilter;
 import com.vmware.rally.automation.data.enums.RTestMethod;
 import com.vmware.rally.automation.data.enums.RTestResultVerdict;
 import com.vmware.rally.automation.data.enums.RTestType;
+import com.vmware.rally.automation.exception.RTaskException;
+import com.vmware.rally.automation.exception.RTaskException.RTaskType;
+import com.vmware.rally.automation.exception.UninitializedRallyApiException;
 
 
 /**
@@ -31,13 +34,11 @@ import com.vmware.rally.automation.data.enums.RTestType;
  * @author akaramyan
  */
 
-// TODO: if not initialized throw exception
-
 @SuppressWarnings("unused")
 public class RallyManager {
 	
 	private RallyRestApi _restApi;
-	private boolean _initilised;
+	private boolean _initialized;
 	private String _apiKey;
 	private String _userEmail;
 	
@@ -51,33 +52,34 @@ public class RallyManager {
 	}
 	
 	private RallyManager() { 
-		_initilised = false;
+		_initialized = false;
 	}
 	
 	
 	/* Getters and Setters */
 	
 	public boolean isInitialized() {
-		return _initilised;
+		return _initialized;
 	}
 	
 	public String getApiKey() {
 		return _apiKey;
 	}
-	public void setApiKey(String apiKey) {
-		_apiKey = apiKey;
-	}
 	
 	public String getUserEmail() {
 		return _userEmail;
-	}
-	public void setUserEmail(String userEmail) {
-		_userEmail = userEmail;
 	}
 	
 	
 	/* Public Methods */
 	
+	/**
+	 * Method for initializing RallyManager with given credentials.
+	 * Needs to be called at least once before calling other public methods, 
+	 * otherwise UninitializedRallyApiException will be thrown. 
+	 * @param userEmail   - String containing user email associated with Rally account
+	 * @param apiKey      - String containing Rally API key associated with given email account
+	 */
 	public void initialize(String userEmail, String apiKey) {
 		_apiKey = apiKey;
 		_userEmail = userEmail;
@@ -87,66 +89,129 @@ public class RallyManager {
 			_restApi = new RallyRestApi(new URI(RALLY_URL_1), _apiKey);
 			
 			if (_restApi != null) {
-				_initilised = true;
+				_initialized = true;
 			}
 		} catch (URISyntaxException e) {
 			// NOP
 		}
 	}
 
-	public JsonObject getUserWithEmail(String email) throws IOException {
+	/**
+	 * Queries user with given email.
+	 * @param email  - String
+	 * @return JsonObject
+	 * @throws RTaskException
+	 * @throws UninitializedRallyApiException
+	 */
+	public JsonObject getUserWithEmail(String email) throws RTaskException, UninitializedRallyApiException {
 		if (!isInitialized()) {
-			return null;
+			throw new UninitializedRallyApiException();
 		}
 		
 		QueryRequest userRequest = new QueryRequest(REQUEST_TYPE_USER);
-		userRequest.setQueryFilter(new QueryFilter(QUERY_FILTER_EMAIL, QUERY_OPERATOR_EQUALS, email));
+		userRequest.setQueryFilter(new QueryFilter(JSON_PROPERTY_EMAIL, QUERY_OPERATOR_EQUALS, email));
 		userRequest = setupQueryRequestForBasicSingleResult(userRequest);
+		JsonObject userJson = null;
 		
-		QueryResponse queryResponse = _restApi.query(userRequest);
-		JsonObject userJson = getFirstResultFromResponse(queryResponse);
+		try {
+			QueryResponse queryResponse = _restApi.query(userRequest);
+			userJson = getFirstResultFromResponse(queryResponse);
+			
+			if (!queryResponse.wasSuccessful()) {
+				throw new RTaskException(RTaskType.GET_USER, queryResponse.getErrors());
+			} else if (userJson == null) {
+				String details = "no results found with email " + email;
+				throw new RTaskException(RTaskType.GET_USER, details);
+			}
+		} catch (IOException e) {
+			throw new RTaskException();
+		}
 		
 		return userJson;
 	}
 	
-	public JsonObject getTestCaseWithId(String id) throws IOException {
+	/**
+	 * Queries TestCase with given id.
+	 * @param id  - String
+	 * @return JsonObject
+	 * @throws RTaskException
+	 * @throws UninitializedRallyApiException
+	 */
+	public JsonObject getTestCaseWithId(String id) throws RTaskException, UninitializedRallyApiException {
 		if (!isInitialized()) {
-			return null;
+			throw new UninitializedRallyApiException();
 		}
 		
 		QueryRequest testCaseRequest = new QueryRequest(REQUEST_TYPE_TESTCASE);
-		testCaseRequest.setQueryFilter(new QueryFilter(QUERY_FILTER_ID, QUERY_OPERATOR_EQUALS, id));
+		testCaseRequest.setQueryFilter(new QueryFilter(JSON_PROPERTY_FORMATTEDID, QUERY_OPERATOR_EQUALS, id));
 		testCaseRequest = setupQueryRequestForBasicSingleResult(testCaseRequest);
+		JsonObject testCaseJson = null;
 		
-		QueryResponse queryResponse = _restApi.query(testCaseRequest);
-		JsonObject testCaseJson = getFirstResultFromResponse(queryResponse);
+		try {
+			QueryResponse queryResponse = _restApi.query(testCaseRequest);
+			testCaseJson = getFirstResultFromResponse(queryResponse);
+			
+			if (!queryResponse.wasSuccessful()) {
+				throw new RTaskException(RTaskType.GET_TEST_CASE, queryResponse.getErrors());
+			} else if (testCaseJson == null) {
+				String details = "no results found with id " + id;
+				throw new RTaskException(RTaskType.GET_TEST_CASE, details);
+			}
+		} catch (IOException e) {
+			throw new RTaskException();
+		}
 		
 		return testCaseJson;
 	}
 	
-	public JsonObject getTestSetWithId(String id) throws IOException {
+	/**
+	 * Queries TestSet with given id.
+	 * @param id  - String
+	 * @return JsonObject
+	 * @throws RTaskException
+	 * @throws UninitializedRallyApiException
+	 */
+	public JsonObject getTestSetWithId(String id) throws RTaskException, UninitializedRallyApiException {
 		if (!isInitialized()) {
-			return null;
+			throw new UninitializedRallyApiException();
 		}
 		
 		QueryRequest testSetRequest = new QueryRequest(REQUEST_TYPE_TESTSET);
-		testSetRequest.setQueryFilter(new QueryFilter(QUERY_FILTER_ID, QUERY_OPERATOR_EQUALS, id));
+		testSetRequest.setQueryFilter(new QueryFilter(JSON_PROPERTY_FORMATTEDID, QUERY_OPERATOR_EQUALS, id));
 		testSetRequest = setupQueryRequestForBasicSingleResult(testSetRequest);
+		JsonObject testSetJson = null;
 		
-		QueryResponse queryResponse = _restApi.query(testSetRequest);
-		JsonObject testSetJson = getFirstResultFromResponse(queryResponse);
-
+		try {
+			QueryResponse queryResponse = _restApi.query(testSetRequest);
+			testSetJson = getFirstResultFromResponse(queryResponse);
+		
+			if (!queryResponse.wasSuccessful()) {
+				throw new RTaskException(RTaskType.GET_TEST_SET, queryResponse.getErrors());
+			} else if (testSetJson == null) {
+				String details = "no results found with id " + id;
+				throw new RTaskException(RTaskType.GET_TEST_SET, details);
+			}
+		} catch (IOException e) {
+			throw new RTaskException();
+		}
+		
+		
 		return testSetJson;
 	}
 	
-	public JsonObject createTestCase(String name, RTestType type, RTestMethod method) throws IOException {
+	/**
+	 * Creates TestCase with given data and current user as owner.
+	 * @param name    - String
+	 * @param type    - RTestType
+	 * @param method  - RTestMethod
+	 * @return JsonObject
+	 * @throws RTaskException
+	 * @throws UninitializedRallyApiException
+	 */
+	public JsonObject createTestCase(String name, RTestType type, RTestMethod method) throws RTaskException, UninitializedRallyApiException {
 		if (!isInitialized()) {
-			return null;
+			throw new UninitializedRallyApiException();
 		}
-		
-		// Default values
-		type = RTestType.ACCEPTANCE;
-		method = RTestMethod.MANUAL;
 		
 		JsonObject testCaseJson = new JsonObject();
 		testCaseJson.addProperty(JSON_PROPERTY_NAME, name);
@@ -155,16 +220,39 @@ public class RallyManager {
 		testCaseJson.add(JSON_PROPERTY_OWNER, getUserWithEmail(_userEmail));
 		
     	CreateRequest newTestCaseRequest = new CreateRequest(REQUEST_TYPE_TESTCASE, testCaseJson);
-		CreateResponse newTestCaseResponse = _restApi.create(newTestCaseRequest);
-		JsonObject createdTestCaseJson = newTestCaseResponse.getObject();
+    	JsonObject createdTestCaseJson = null;
+
+    	try {
+			CreateResponse newTestCaseResponse = _restApi.create(newTestCaseRequest);
+			
+			if (!newTestCaseResponse.wasSuccessful()) {
+				throw new RTaskException(RTaskType.CREATE_TEST_CASE, newTestCaseResponse.getErrors());
+			}
+			
+			createdTestCaseJson = newTestCaseResponse.getObject();
+			
+		} catch (IOException e) {
+			throw new RTaskException();
+		}
 		
 		return createdTestCaseJson;
 	}
 	
-	public JsonObject createTestCaseResult(JsonObject testCase, JsonObject testSet, 
-			String build, RTestResultVerdict verdict, Date date) throws IOException {
+	/**
+	 * Creates TestCaseResult with given data and current user as tester.
+	 * @param testCase   - JsonObject
+	 * @param testSet    - JsonObject
+	 * @param build      - String
+	 * @param verdict    - RTestResultVerdict
+	 * @param date       - Date
+	 * @return JsonObject
+	 * @throws RTaskException
+	 * @throws UninitializedRallyApiException
+	 */
+	public JsonObject createTestCaseResult(JsonObject testCase, JsonObject testSet, String build, 
+			RTestResultVerdict verdict, Date date) throws RTaskException, UninitializedRallyApiException {
 		if (!isInitialized()) {
-			return null;
+			throw new UninitializedRallyApiException();
 		}
 		
 		JsonObject testCaseResultJson = new JsonObject();
@@ -176,9 +264,21 @@ public class RallyManager {
 		testCaseResultJson.addProperty(JSON_PROPERTY_DATE, getFormattedDateString(date));
 
 		CreateRequest newTestCaseResultRequest = new CreateRequest(REQUEST_TYPE_TESTCASERESULT, testCaseResultJson);
-		CreateResponse newTestCaseResultResponse = _restApi.create(newTestCaseResultRequest);
-		JsonObject createdTestCaseResultJson = newTestCaseResultResponse.getObject();
+		JsonObject createdTestCaseResultJson = null;
+		
+		try {
+			CreateResponse newTestCaseResultResponse = _restApi.create(newTestCaseResultRequest);
 
+			if (!newTestCaseResultResponse.wasSuccessful()) {
+				throw new RTaskException(RTaskType.CREATE_TEST_CASE_RESULT, newTestCaseResultResponse.getErrors());
+			}
+
+			createdTestCaseResultJson = newTestCaseResultResponse.getObject();
+			
+		} catch (IOException e) {
+			throw new RTaskException();
+		}
+		
 		return createdTestCaseResultJson;
 	}
 	
@@ -232,17 +332,26 @@ public class RallyManager {
 	 * Helper method, deletes Rally object with given reference
 	 * @param ref - String containing reference, ex. "/testcase/7362928857"
 	 * @return <i>true</i> if deletion was successful, <i>false</i> otherwise
-	 * @throws IOException
+	 * @throws RTaskException
+	 * @throws UninitializedRallyApiException
 	 */
-	private boolean deleteObjectWithRef(String ref) throws IOException {
+	private boolean deleteObjectWithRef(String ref) throws RTaskException, UninitializedRallyApiException {
 		if (!isInitialized()) {
-			return false;
+			throw new UninitializedRallyApiException();
 		}
 		
 		DeleteRequest deleteRequest = new DeleteRequest(ref);
-		DeleteResponse deleteResponse = _restApi.delete(deleteRequest);
+		boolean result = false;
 		
-		return deleteResponse.wasSuccessful();
+		try {
+			DeleteResponse deleteResponse = _restApi.delete(deleteRequest);
+			result = deleteResponse.wasSuccessful();
+			
+		} catch (IOException e) {
+			throw new RTaskException();
+		}
+		
+		return result;
 	}
 	
 	
@@ -258,6 +367,8 @@ public class RallyManager {
 	
 	private static final String JSON_PROPERTY_BUILD = "Build";
 	private static final String JSON_PROPERTY_DATE = "Date";
+	private static final String JSON_PROPERTY_EMAIL = "EmailAddress";
+	private static final String JSON_PROPERTY_FORMATTEDID = "FormattedID";
 	private static final String JSON_PROPERTY_METHOD = "Method";
 	private static final String JSON_PROPERTY_NAME = "Name";
 	private static final String JSON_PROPERTY_OWNER = "Owner";
@@ -267,8 +378,6 @@ public class RallyManager {
 	private static final String JSON_PROPERTY_TYPE = "Type";
 	private static final String JSON_PROPERTY_VERDICT = "Verdict";
 	
-	private static final String QUERY_FILTER_EMAIL = "EmailAddress";
-	private static final String QUERY_FILTER_ID = "FormattedID";
 	private static final String QUERY_OPERATOR_EQUALS = "=";
 	
 	/* ****/

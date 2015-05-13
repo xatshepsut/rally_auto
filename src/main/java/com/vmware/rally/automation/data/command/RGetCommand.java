@@ -1,9 +1,10 @@
 package com.vmware.rally.automation.data.command;
 
-import java.io.IOException;
-
 import com.google.gson.JsonObject;
 import com.vmware.rally.automation.controller.RallyManager;
+import com.vmware.rally.automation.exception.InvalidRCommandException;
+import com.vmware.rally.automation.exception.RTaskException;
+import com.vmware.rally.automation.exception.UninitializedRallyApiException;
 
 /**
  * RGetCommand handles retrieving of objects from Rally. 
@@ -24,22 +25,17 @@ public class RGetCommand implements RCommand {
 		setType(type);
 	}
 
-	public JsonObject execute() {
+	public JsonObject execute() throws RTaskException, UninitializedRallyApiException, InvalidRCommandException {
 		if (!isValid()) {
-			// TODO: throw exception
-			return null;
+			throw new InvalidRCommandException();
 		}
 		
 		JsonObject result = null;
-		
-		try {
-			if (RGetCommandType.GET_TEST_CASE == _type) {
-				result = RallyManager.getInstance().getTestCaseWithId(_id);
-			} else if (RGetCommandType.GET_TEST_SET == _type) {
-				result = RallyManager.getInstance().getTestSetWithId(_id);
-			}
-		} catch (IOException exception) {
-			// TODO: handle
+
+		if (RGetCommandType.GET_TEST_CASE == _type) {
+			result = RallyManager.getInstance().getTestCaseWithId(_id);
+		} else if (RGetCommandType.GET_TEST_SET == _type) {
+			result = RallyManager.getInstance().getTestSetWithId(_id);
 		}
 		
         return result;

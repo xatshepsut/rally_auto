@@ -43,11 +43,8 @@ public class RallyManager {
 	private String _userEmail;
 	
 	
-	private static RallyManager instance = null;
+	private static RallyManager instance = new RallyManager();
 	public static RallyManager getInstance() {
-		if(instance == null) {
-			instance = new RallyManager();
-		}
 		return instance;
 	}
 	

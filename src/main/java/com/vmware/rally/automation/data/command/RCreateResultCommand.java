@@ -4,6 +4,7 @@ import java.util.Date;
 
 import com.google.gson.JsonObject;
 import com.vmware.rally.automation.controller.RallyManager;
+import com.vmware.rally.automation.data.enums.RJsonObjectType;
 import com.vmware.rally.automation.data.enums.RTestResultVerdict;
 import com.vmware.rally.automation.exception.InvalidRCommandException;
 import com.vmware.rally.automation.exception.RTaskException;
@@ -47,6 +48,10 @@ public class RCreateResultCommand implements RCommand {
 		
 		return !(_testCase == null || _testSet == null || (_build == null || _build.isEmpty()) 
 				|| _verdict == null || _date == null);
+	}
+	
+	public RJsonObjectType getResultType() {
+		return RJsonObjectType.JSON_OBJECT_TESTCASERESULT;
 	}
 	
 	

@@ -1,5 +1,6 @@
 package com.vmware.rally.automation.controller;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -15,11 +16,16 @@ import com.google.gson.JsonObject;
 import com.vmware.rally.automation.data.RTestData;
 import com.vmware.rally.automation.data.command.RCommand;
 import com.vmware.rally.automation.data.command.RCommandCallable;
+import com.vmware.rally.automation.data.command.RCommandCallableResultEnvelop;
 import com.vmware.rally.automation.data.command.RCommandEnvelop;
 import com.vmware.rally.automation.data.command.RCreateResultCommand;
 import com.vmware.rally.automation.data.command.RGetCommand;
 import com.vmware.rally.automation.data.command.RGetCommand.RGetCommandType;
+import com.vmware.rally.automation.data.enums.RJsonObjectType;
 import com.vmware.rally.automation.data.enums.RTestResultVerdict;
+import com.vmware.rally.automation.exception.InvalidRCommandException;
+import com.vmware.rally.automation.exception.RTaskException;
+import com.vmware.rally.automation.exception.UninitializedRallyApiException;
 import com.vmware.rally.automation.utils.LoggerWrapper;
 
 
@@ -41,12 +47,17 @@ public class AutomationManager {
 	 * Map with results from command call.
 	 * Shared resource with command executor.
 	 */
-	private Map<String, Queue<Future<JsonObject>>> _resultMap = new HashMap<String, Queue<Future<JsonObject>>> ();
+	private Map<String, Queue<RCommandCallableResultEnvelop>> _resultMap = new HashMap<String, Queue<RCommandCallableResultEnvelop>> ();
 
 	/**
 	 * Queue with RCreateResultCommand objects that are not ready to be executed.
 	 */
 	private Queue<RCommandEnvelop> _pendingResultQueue = new LinkedList<RCommandEnvelop>();
+	
+	/**
+	 * Black labeled keys i.e. keys of tests that we are unable to further process
+	 */
+	private ArrayList<String> _blackLabeledKeys = new ArrayList<String>();
 	
 	/**
 	 * ExecutorService for executing RCommands wrapped in RCommandCallable.
@@ -70,11 +81,8 @@ public class AutomationManager {
 		LoggerWrapper.getInstance().registerLogger();
 	}
 	
-	private static AutomationManager instance = null;
+	private static AutomationManager instance = new AutomationManager();
 	public static AutomationManager getInstance() {
-		if(instance == null) {
-			instance = new AutomationManager();
-		}
 		return instance;
 	}
 	
@@ -129,9 +137,14 @@ public class AutomationManager {
 	 * Processes all pending commands and exits the application.
 	 */
 	public void onComplete() {
+		// xx Update pending results, clean black labeled items, move to executable queue
+		processPendingResultCommandQueue();
+		
 		if (!_pendingResultQueue.isEmpty()) {
 			// Wait for all pending results to be ready in a loop
 			while (!_pendingResultQueue.isEmpty()) {
+				// xx will clean broken commands ie with failed results 
+				// xx so no blocking !
 				processPendingResultCommandQueue();
 			}
 			
@@ -140,13 +153,18 @@ public class AutomationManager {
 			_commandExecutor.shutdown();
 			try {
 				_commandExecutor.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
+				
+				for (String key : _resultMap.keySet()) {
+					processResultsWithKey(key);
+				}
 			} catch (InterruptedException e) {
-				// Error: interrupted while waiting 
+				// Unexpected error: interrupted while waiting
+				// TODO: retry command
 			}
 		}
 	}
-	
-	
+
+
 	/* Private Methods */
 	
 	/**
@@ -157,7 +175,8 @@ public class AutomationManager {
 	private void insertCommandWithKey(RCommand command, String key) {
 		RCommandCallable commandCallable = new RCommandCallable(command);
 		Future<JsonObject> future = _commandExecutor.submit(commandCallable);
-		addFutureToResultsWithKey(future, key);
+		
+		addResultFutureWithTypeAndKey(future, command.getResultType(), key);
 	}
 	
 	/**
@@ -165,17 +184,18 @@ public class AutomationManager {
 	 * @param future   - Future<JsonObject> containing JSON result
 	 * @param key      - String uniquely identifying test
 	 */
-	private void addFutureToResultsWithKey(Future<JsonObject> future, String key) {
-		Queue<Future<JsonObject>> resultQueue;
+	private void addResultFutureWithTypeAndKey(Future<JsonObject> future, RJsonObjectType type, String key) {
+		Queue<RCommandCallableResultEnvelop> resultQueue;
+		
 		
 		if (_resultMap.containsKey(key)) {
 			resultQueue = _resultMap.get(key);
 		} else {
-			resultQueue = new LinkedList<Future<JsonObject>>();
+			resultQueue = new LinkedList<RCommandCallableResultEnvelop>();
 		}
 		
-		// Keeping future in result map to extract JSON result later
-		resultQueue.add(future);
+		// Keeping wrapped future in result map to extract JSON result later
+		resultQueue.add(new RCommandCallableResultEnvelop(future, type));
 		_resultMap.put(key, resultQueue);
 	}
 	
@@ -203,12 +223,14 @@ public class AutomationManager {
 	 */
 	private void processResultsWithKey(String key) {
 		// Note: Here we assume all commands are executed in sequence.
-		// So if top future in the queue is not done yet, than others also are not ready.
+		// So if top future in the queue is not done yet, than others also cannot be ready.
 		
-		Queue<Future<JsonObject>> resultQueue = _resultMap.get(key);
+		Queue<RCommandCallableResultEnvelop> resultQueue = _resultMap.get(key);
 		
 		while (resultQueue != null && !resultQueue.isEmpty()) {
-			Future<JsonObject> future = resultQueue.peek();
+			RCommandCallableResultEnvelop wrappedFuture = resultQueue.peek();
+			Future<JsonObject> future = wrappedFuture.getFuture();
+			RJsonObjectType type = wrappedFuture.getType();
 			
 			if (future.isDone()) {
 				resultQueue.poll();
@@ -216,23 +238,46 @@ public class AutomationManager {
 				try {
 					JsonObject jsonResult = future.get();
 
-					String type = jsonResult.get("_type").getAsString();
 					RTestData testData  = getTestDataForKey(key);
 					assert testData != null;
 					
-					if (type.equals("TestCase")) {
+					if (RJsonObjectType.JSON_OBJECT_TESTCASE == type) {
 						testData.setTestCaseJson(jsonResult);
-						LoggerWrapper.getInstance().logInfo("Received JSON object for TestCase with id: " + testData.getId());
-					} else if (type.equals("TestSet")) {
+						LoggerWrapper.getInstance().logInfo("Got JSON object for TestCase with id: " + testData.getId());
+					} else if (RJsonObjectType.JSON_OBJECT_TESTSET == type) {
 						testData.setTestSetJson(jsonResult);
-						LoggerWrapper.getInstance().logInfo("Received JSON object for TestSet with id: " + testData.getTestSetId());
+						LoggerWrapper.getInstance().logInfo("Got JSON object for TestSet with id: " + testData.getTestSetId());
+					} else if (RJsonObjectType.JSON_OBJECT_TESTCASERESULT == type) {
+						LoggerWrapper.getInstance().logInfo("Created TestCaseResult object for key: " + key);
 					}
 				} catch (InterruptedException e) {
 					// Unexpected error: Command was interrupted
 					// TODO: retry command
 				} catch (ExecutionException e) {
 					// Error: Exception was thrown by command
-					LoggerWrapper.getInstance().logError(e.getCause().getMessage());
+					Exception exception = (Exception) e.getCause();
+					
+					assert !exception.getClass().equals(InvalidRCommandException.class);
+					LoggerWrapper.getInstance().logError(exception.getMessage());
+					
+					if ((exception.getClass().equals(UninitializedRallyApiException.class) || 
+							exception.getClass().equals(RTaskException.class)) && 
+							((RJsonObjectType.JSON_OBJECT_TESTCASE == type) || (RJsonObjectType.JSON_OBJECT_TESTSET == type))) {
+						// Black label this key
+						// We are unable to make any Rally related actions after these exceptions
+						_blackLabeledKeys.add(key);
+						
+						if (RJsonObjectType.JSON_OBJECT_TESTCASE == type) {
+							LoggerWrapper.getInstance().logInfo("Failed to get TestCase, unable to further process test with key: " + key);
+						} else {
+							LoggerWrapper.getInstance().logInfo("Failed to get TestSet, unable to further process test with key: " + key);
+						}
+						
+						// Clean result queue for given key
+						while (!resultQueue.isEmpty()) {
+							resultQueue.poll();
+						} 
+					}
 				}
 			} else {
 				break;
@@ -248,7 +293,8 @@ public class AutomationManager {
 	private void processPendingResultCommandQueue() {
 		assert _pendingResultQueue != null;
 		
-		while (!_pendingResultQueue.isEmpty()) {
+		boolean canContinueProccessing = true;
+		while (!_pendingResultQueue.isEmpty() && canContinueProccessing) {
 			RCommandEnvelop pendingCommandEnvelop = _pendingResultQueue.peek();
 			RCreateResultCommand pendingCommand = (RCreateResultCommand) pendingCommandEnvelop.getCommand();			
 			String key = pendingCommandEnvelop.getKey();
@@ -262,17 +308,22 @@ public class AutomationManager {
 			if (pendingCommand.isValid()) {
 				RCommandCallable commandCallable = new RCommandCallable(pendingCommand);
 				Future<JsonObject> future = _commandExecutor.submit(commandCallable);
-				addFutureToResultsWithKey(future, key);
+				addResultFutureWithTypeAndKey(future, pendingCommand.getResultType(), key);
 				
 				_pendingResultQueue.poll();
+				
+			} else if (_blackLabeledKeys.contains(key)){
+				_pendingResultQueue.poll();
+				
 			} else {
 				// Note: We assume all tests run in sequential order, same for related REST calls.
 				// This means if data for completing top element in queue is not available
 				// than data for next one in queue cannot be available either.
 				
-				// Update queue top and exit
+				// Queue top results are still pending, update and exit
 				pendingCommandEnvelop.setCommand(pendingCommand);
-				break;
+				
+				canContinueProccessing = false;
 			}
 		}
 	}

@@ -1,6 +1,7 @@
 package com.vmware.rally.automation.data.command;
 
 import com.google.gson.JsonObject;
+import com.vmware.rally.automation.data.enums.RJsonObjectType;
 import com.vmware.rally.automation.exception.InvalidRCommandException;
 import com.vmware.rally.automation.exception.RTaskException;
 import com.vmware.rally.automation.exception.UninitializedRallyApiException;
@@ -26,4 +27,10 @@ public interface RCommand {
 	 * @return <i>true</i> if command is valid, <i>false</i> otherwise
 	 */
 	public boolean isValid();
+
+	/**
+	 * Returns JsonReults object type.
+	 * @return RJsonObjectType
+	 */
+	public RJsonObjectType getResultType();
 }

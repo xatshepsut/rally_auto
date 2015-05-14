@@ -2,6 +2,7 @@ package com.vmware.rally.automation.data.command;
 
 import com.google.gson.JsonObject;
 import com.vmware.rally.automation.controller.RallyManager;
+import com.vmware.rally.automation.data.enums.RJsonObjectType;
 import com.vmware.rally.automation.exception.InvalidRCommandException;
 import com.vmware.rally.automation.exception.RTaskException;
 import com.vmware.rally.automation.exception.UninitializedRallyApiException;
@@ -43,6 +44,18 @@ public class RGetCommand implements RCommand {
 	
 	public boolean isValid() {
 		return !((_id == null || _id.isEmpty()) || _type == null);
+	}
+	
+	public RJsonObjectType getResultType() {
+		RJsonObjectType resultType = null;
+		
+		if (RGetCommandType.GET_TEST_CASE == _type) {
+			resultType = RJsonObjectType.JSON_OBJECT_TESTCASE;
+		} else if (RGetCommandType.GET_TEST_SET == _type) {
+			resultType = RJsonObjectType.JSON_OBJECT_TESTSET;
+		}
+		
+		return resultType;
 	}
 	
 	

@@ -2,6 +2,7 @@ package com.vmware.rally.automation.data.command;
 
 import com.google.gson.JsonObject;
 import com.vmware.rally.automation.controller.RallyManager;
+import com.vmware.rally.automation.data.enums.RJsonObjectType;
 import com.vmware.rally.automation.data.enums.RTestMethod;
 import com.vmware.rally.automation.data.enums.RTestType;
 import com.vmware.rally.automation.exception.InvalidRCommandException;
@@ -37,6 +38,10 @@ public class RCreateCaseCommand implements RCommand {
 	
 	public boolean isValid() {
 		return !((_name == null || _name.isEmpty()) || _type == null || _method == null);
+	}
+	
+	public RJsonObjectType getResultType() {
+		return RJsonObjectType.JSON_OBJECT_TESTCASE;
 	}
 	
 	

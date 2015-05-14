@@ -20,6 +20,7 @@ import com.vmware.rally.automation.data.command.RCreateResultCommand;
 import com.vmware.rally.automation.data.command.RGetCommand;
 import com.vmware.rally.automation.data.command.RGetCommand.RGetCommandType;
 import com.vmware.rally.automation.data.enums.RTestResultVerdict;
+import com.vmware.rally.automation.utils.LoggerWrapper;
 
 
 /**
@@ -64,6 +65,9 @@ public class AutomationManager {
 		
 		// Initializing command executor with single thread
 		_commandExecutor = Executors.newSingleThreadExecutor();
+		
+		// Initializing logger for this class
+		LoggerWrapper.getInstance().registerLogger();
 	}
 	
 	private static AutomationManager instance = null;
@@ -88,9 +92,11 @@ public class AutomationManager {
 		
 		RGetCommand tcCommand = new RGetCommand(testData.getId(), RGetCommandType.GET_TEST_CASE);
 		insertCommandWithKey(tcCommand, key);
+		LoggerWrapper.getInstance().logInfo("Created get command for TestCase with id: " + testData.getId());
 		
 		RGetCommand tsCommand = new RGetCommand(testData.getTestSetId(), RGetCommandType.GET_TEST_SET);
 		insertCommandWithKey(tsCommand, key);
+		LoggerWrapper.getInstance().logInfo("Created get command for TestSet with id: " + testData.getTestSetId());
 	}
 	
 	/**
@@ -216,15 +222,17 @@ public class AutomationManager {
 					
 					if (type.equals("TestCase")) {
 						testData.setTestCaseJson(jsonResult);
+						LoggerWrapper.getInstance().logInfo("Received JSON object for TestCase with id: " + testData.getId());
 					} else if (type.equals("TestSet")) {
 						testData.setTestSetJson(jsonResult);
+						LoggerWrapper.getInstance().logInfo("Received JSON object for TestSet with id: " + testData.getTestSetId());
 					}
 				} catch (InterruptedException e) {
 					// Unexpected error: Command was interrupted
 					// TODO: retry command
 				} catch (ExecutionException e) {
 					// Error: Exception was thrown by command
-					System.out.println(e.getCause().getMessage());
+					LoggerWrapper.getInstance().logError(e.getCause().getMessage());
 				}
 			} else {
 				break;

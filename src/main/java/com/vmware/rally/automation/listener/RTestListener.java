@@ -6,6 +6,7 @@ import org.testng.ITestResult;
 
 import com.vmware.rally.automation.controller.AutomationManager;
 import com.vmware.rally.automation.data.enums.RTestResultVerdict;
+import com.vmware.rally.automation.utils.LoggerWrapper;
 import com.vmware.rally.automation.utils.TestUtils;
 
 /**
@@ -21,7 +22,7 @@ public class RTestListener implements ITestListener {
 	 */
 	public void onTestStart(ITestResult result) {
 		String methodName = TestUtils.getMethodFullName(result.getMethod());
-		System.out.println("Started running test method "  + methodName);
+		LoggerWrapper.getInstance().logInfo("Started running test method "  + methodName);
 		
 		/*
 		// Sample code for retrieving annotation
@@ -38,8 +39,8 @@ public class RTestListener implements ITestListener {
 	 */
 	public void onTestSuccess(ITestResult result) {
 		String methodName = TestUtils.getMethodFullName(result.getMethod());
-		System.out.println("Test method "  + methodName + " passed");
-	    
+		LoggerWrapper.getInstance().logInfo("Test method "  + methodName + " passed");
+		
 	    AutomationManager.getInstance().onFinishedTestWithVerdict(methodName, RTestResultVerdict.PASS);
 	}
 
@@ -48,7 +49,7 @@ public class RTestListener implements ITestListener {
 	 */
 	public void onTestFailure(ITestResult result) {
 		String methodName = TestUtils.getMethodFullName(result.getMethod());
-		System.out.println("Test method "  + methodName + " failed");
+		LoggerWrapper.getInstance().logInfo("Test method "  + methodName + " failed");
 		
 		AutomationManager.getInstance().onFinishedTestWithVerdict(methodName, RTestResultVerdict.FAIL);
 	}
@@ -58,7 +59,7 @@ public class RTestListener implements ITestListener {
 	 */
 	public void onTestSkipped(ITestResult result) {
 		String methodName = TestUtils.getMethodFullName(result.getMethod());
-		System.out.println("Test method "  + methodName + " is skipped");
+		LoggerWrapper.getInstance().logInfo("Test method "  + methodName + " is skipped");
 	}
 
 	/**
@@ -67,22 +68,22 @@ public class RTestListener implements ITestListener {
 	 */
 	public void onTestFailedButWithinSuccessPercentage(ITestResult result) {
 		String methodName = TestUtils.getMethodFullName(result.getMethod());
-		System.out.println("Test method "  + methodName + " failed with sucess percantage.");
+		LoggerWrapper.getInstance().logInfo("Test method "  + methodName + " failed with sucess percantage.");
 	}
 
 	/**
 	 * Invoked after the test class is instantiated and before any configuration method is called.
 	 */
 	public void onStart(ITestContext context) {
-		System.out.println("Started running test "  + context.getName());
+		LoggerWrapper.getInstance().registerLogger();
+		LoggerWrapper.getInstance().logInfo("Started running test "  + context.getName());
 	}
 
 	/**
 	 * Invoked after all the tests have run and all their Configuration methods have been called.
 	 */
 	public void onFinish(ITestContext context) {
-		System.out.println("Finished running test "  + context.getName());
-		System.out.println();
+		LoggerWrapper.getInstance().logInfo("Finished running test "  + context.getName());
 		
 		AutomationManager.getInstance().onComplete();
 	}

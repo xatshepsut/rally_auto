@@ -5,7 +5,6 @@
 
   <listeners>
     <listener class-name="com.vmware.rally.automation.listener.RTestListener" />
-    <listener class-name="com.vmware.rally.automation.listener.RInvokedMethodListener" />
   </listeners>
 
   <test name="Test_1">

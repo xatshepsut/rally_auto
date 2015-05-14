@@ -1,10 +1,14 @@
 package com.vmware.rally.automation.listener;
 
+import java.lang.reflect.Method;
+
 import org.testng.ITestContext;
 import org.testng.ITestListener;
 import org.testng.ITestResult;
 
 import com.vmware.rally.automation.controller.AutomationManager;
+import com.vmware.rally.automation.data.RTestData;
+import com.vmware.rally.automation.data.annotation.TestCase;
 import com.vmware.rally.automation.data.enums.RTestResultVerdict;
 import com.vmware.rally.automation.utils.LoggerWrapper;
 import com.vmware.rally.automation.utils.TestUtils;
@@ -24,14 +28,14 @@ public class RTestListener implements ITestListener {
 		String methodName = TestUtils.getMethodFullName(result.getMethod());
 		LoggerWrapper.getInstance().logInfo("Started running test method "  + methodName);
 		
-		/*
-		// Sample code for retrieving annotation
-		// TODO: Move here annotation retrieval code from RInvokedMethodListener
-		TestCase tcAnnotation = result.getMethod().getConstructorOrMethod().getMethod().getAnnotation(TestCase.class);
+		Method method = result.getMethod().getConstructorOrMethod().getMethod();
+		TestCase tcAnnotation = method.getAnnotation(TestCase.class);
+		
 		if (tcAnnotation != null) {
-			System.out.println("Test case id from annotation " + tcAnnotation.id());
+			RTestData testCaseData = 
+					new RTestData(tcAnnotation.id(), tcAnnotation.buildNumber(), tcAnnotation.testSetId());
+			AutomationManager.getInstance().addTestData(testCaseData, methodName);
 		}
-		*/
 	}
 
 	/**

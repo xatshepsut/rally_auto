@@ -65,25 +65,22 @@ public class AutomationManager {
 	private ExecutorService _commandExecutor;
 
 	
-	// TODO: replace
-	public static String API_KEY = "_OhYE7czYRo2y2tR6il3lyJQsoJGhP0T1gM8JqCFZMlg";
-	public static String USER_EMAIL = "bobbrown@dispostable.com";
+	public String _apiKey;
+	public String _userEmail;
 	
 	
-	private AutomationManager() {
+	public AutomationManager(String apiKey, String userEmail) {
+		_apiKey = apiKey;
+		_userEmail = userEmail;
+		
 		// Initializing RallyManager before first use
-		RallyManager.getInstance().initialize(USER_EMAIL, API_KEY);
+		RallyManager.getInstance().initialize(_userEmail, _apiKey);
 		
 		// Initializing command executor with single thread
 		_commandExecutor = Executors.newSingleThreadExecutor();
 		
 		// Initializing logger for this class
 		LoggerWrapper.getInstance().registerLogger();
-	}
-	
-	private static AutomationManager instance = new AutomationManager();
-	public static AutomationManager getInstance() {
-		return instance;
 	}
 	
 	

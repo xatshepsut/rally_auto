@@ -1,6 +1,9 @@
 package com.vmware.rally.automation.listener;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.lang.reflect.Method;
+import java.util.Properties;
 
 import org.testng.ITestContext;
 import org.testng.ITestListener;
@@ -20,6 +23,9 @@ import com.vmware.rally.automation.utils.TestUtils;
  */
 public class RTestListener implements ITestListener {
 	
+	private static final String CREDENTIALS_FILENAME = "rally_automation.properties";
+	private AutomationManager _manager;
+	
 	/**
 	 * Invoked each time before a test will be invoked.
 	 * The ITestResult is only partially filled with the references to class, method, start millis and status.
@@ -31,10 +37,10 @@ public class RTestListener implements ITestListener {
 		Method method = result.getMethod().getConstructorOrMethod().getMethod();
 		TestCase tcAnnotation = method.getAnnotation(TestCase.class);
 		
-		if (tcAnnotation != null) {
+		if (tcAnnotation != null && _manager != null) {
 			RTestData testCaseData = 
 					new RTestData(tcAnnotation.id(), tcAnnotation.buildNumber(), tcAnnotation.testSetId());
-			AutomationManager.getInstance().addTestData(testCaseData, methodName);
+			_manager.addTestData(testCaseData, methodName);
 		}
 	}
 
@@ -45,7 +51,9 @@ public class RTestListener implements ITestListener {
 		String methodName = TestUtils.getMethodFullName(result.getMethod());
 		LoggerWrapper.getInstance().logInfo("Test method "  + methodName + " passed");
 		
-	    AutomationManager.getInstance().onFinishedTestWithVerdict(methodName, RTestResultVerdict.PASS);
+		if (_manager != null) {
+			_manager.onFinishedTestWithVerdict(methodName, RTestResultVerdict.PASS);
+		}
 	}
 
 	/**
@@ -55,7 +63,9 @@ public class RTestListener implements ITestListener {
 		String methodName = TestUtils.getMethodFullName(result.getMethod());
 		LoggerWrapper.getInstance().logInfo("Test method "  + methodName + " failed");
 		
-		AutomationManager.getInstance().onFinishedTestWithVerdict(methodName, RTestResultVerdict.FAIL);
+		if (_manager != null) {
+			_manager.onFinishedTestWithVerdict(methodName, RTestResultVerdict.FAIL);
+		}
 	}
 
 	/**
@@ -81,6 +91,24 @@ public class RTestListener implements ITestListener {
 	public void onStart(ITestContext context) {
 		LoggerWrapper.getInstance().registerLogger();
 		LoggerWrapper.getInstance().logInfo("Started running test "  + context.getName());
+		
+		Properties properties = new Properties();
+		
+		//java.io.InputStream inputStream = getClass().getClassLoader().getResourceAsStream();
+		
+		try {
+			FileInputStream inputStream = new FileInputStream(new File(CREDENTIALS_FILENAME));
+
+			// Get credentials and initialize manager
+			properties.load(inputStream);
+			
+			String apiKey = properties.getProperty("apiKey");
+			String userEmail = properties.getProperty("userEmail");
+
+			_manager = new AutomationManager(apiKey, userEmail);
+		} catch (Exception e) {
+			LoggerWrapper.getInstance().logError("Property file '" + CREDENTIALS_FILENAME + "' not found in the classpath, unable to initialize AutomationManager");
+		}
 	}
 
 	/**
@@ -89,7 +117,9 @@ public class RTestListener implements ITestListener {
 	public void onFinish(ITestContext context) {
 		LoggerWrapper.getInstance().logInfo("Finished running test "  + context.getName());
 		
-		AutomationManager.getInstance().onComplete();
+		if (_manager != null) {
+			_manager.onComplete();
+		}
 	}
 
 

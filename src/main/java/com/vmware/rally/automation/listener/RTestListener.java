@@ -23,7 +23,11 @@ import com.vmware.rally.automation.utils.TestUtils;
  */
 public class RTestListener implements ITestListener {
 	
-	private static final String CREDENTIALS_FILENAME = "rally_automation.properties";
+	public static final String CREDENTIALS_FILENAME = "rally_automation.properties";
+	
+	/**
+	 * AutomationManager instance for handling Rally updates
+	 */
 	private AutomationManager _manager;
 	
 	/**
@@ -102,10 +106,11 @@ public class RTestListener implements ITestListener {
 			// Get credentials and initialize manager
 			properties.load(inputStream);
 			
+			String rallyUrl = properties.getProperty("rallyUrl");
 			String apiKey = properties.getProperty("apiKey");
 			String userEmail = properties.getProperty("userEmail");
 
-			_manager = new AutomationManager(apiKey, userEmail);
+			_manager = new AutomationManager(rallyUrl, apiKey, userEmail);
 		} catch (Exception e) {
 			LoggerWrapper.getInstance().logError("Property file '" + CREDENTIALS_FILENAME + "' not found in the classpath, unable to initialize AutomationManager");
 		}

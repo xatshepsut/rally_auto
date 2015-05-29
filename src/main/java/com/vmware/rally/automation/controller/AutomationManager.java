@@ -65,16 +65,18 @@ public class AutomationManager {
 	private ExecutorService _commandExecutor;
 
 	
+	public String _rallyUrl;
 	public String _apiKey;
 	public String _userEmail;
 	
 	
-	public AutomationManager(String apiKey, String userEmail) {
+	public AutomationManager(String rallyUrl, String apiKey, String userEmail) {
+		_rallyUrl = rallyUrl;
 		_apiKey = apiKey;
 		_userEmail = userEmail;
 		
 		// Initializing RallyManager before first use
-		RallyManager.getInstance().initialize(_userEmail, _apiKey);
+		RallyManager.getInstance().initialize(_rallyUrl, _userEmail, _apiKey);
 		
 		// Initializing command executor with single thread
 		_commandExecutor = Executors.newSingleThreadExecutor();

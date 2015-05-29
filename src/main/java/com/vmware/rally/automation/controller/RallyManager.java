@@ -39,6 +39,8 @@ public class RallyManager {
 	
 	private RallyRestApi _restApi;
 	private boolean _initialized;
+	
+	private String _rallyUrl;
 	private String _apiKey;
 	private String _userEmail;
 	
@@ -76,11 +78,16 @@ public class RallyManager {
 	 * otherwise UninitializedRallyApiException will be thrown. 
 	 * @param userEmail   - String containing user email associated with Rally account
 	 * @param apiKey      - String containing Rally API key associated with given email account
+	 * @return 
 	 */
-	public void initialize(String userEmail, String apiKey) {
+	public boolean initialize(String rallyUrl, String userEmail, String apiKey) {
+		_rallyUrl = rallyUrl;
 		_apiKey = apiKey;
 		_userEmail = userEmail;
 		_restApi = null;
+		
+		// Resetting initialization flag
+		_initialized = false;
 		
 		try {
 			_restApi = new RallyRestApi(new URI(RALLY_URL_1), _apiKey);
@@ -91,6 +98,8 @@ public class RallyManager {
 		} catch (URISyntaxException e) {
 			// NOP
 		}
+		
+		return _initialized;
 	}
 
 	/**
